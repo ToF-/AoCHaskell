@@ -1,0 +1,2 @@
+# AoCHaskell
+AdventOfCode In Haskell
