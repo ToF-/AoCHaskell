@@ -2,6 +2,7 @@ module Sleep
 where
 import Data.List as L
 import Data.Map as M
+import Data.Ord
 
 data Guard = Guard GuardId
            | Sleep
@@ -55,3 +56,10 @@ collect evts = snd  (L.foldl addEvent (Nothing ,M.empty) (L.sort evts))
 
     addEvent (Just g,map) (_,_,_,_,m,Wake) =
         (Just g, M.adjust (\(a:as) -> ((wakeAt m a) : as)) g map)
+
+collectTotalTimeAsleep :: [Event] -> [(GuardId,Int)]
+collectTotalTimeAsleep = L.reverse . L.sortBy (comparing snd) . M.toList . M.map totalTimeAsleep . collect
+
+collectMaxSleePMinute :: [Event] -> [(GuardId,Int)]
+collectMaxSleePMinute = L.reverse . L.sortBy (comparing snd) . M.toList . M.map maxSleepMinute . collect
+
