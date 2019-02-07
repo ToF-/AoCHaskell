@@ -1,5 +1,6 @@
 import Test.Hspec
 import Sleep
+import Data.Map as M
 
 main = hspec $ do
     describe "guard" $ do
@@ -38,5 +39,30 @@ main = hspec $ do
                 replicate 18 1
         it "max sleep minute" $ do
             maxSleepMinute t  `shouldBe` 34
+
+    describe "collect events" $ do
+        it "collect events about sleep patterns" $ do
+            let evts = [(1518,11,01,00,00, Guard 10)
+                       ,(1518,11,01,00,05, Sleep)
+                       ,(1518,11,01,00,25, Wake)
+                       ,(1518,11,01,00,30, Sleep)
+                       ,(1518,11,01,00,55, Wake)
+                       ,(1518,11,01,23,58, Guard 99)
+                       ,(1518,11,02,00,40, Sleep)
+                       ,(1518,11,02,00,50, Wake)
+                       ,(1518,11,03,00,05, Guard 10)
+                       ,(1518,11,03,00,24, Sleep)
+                       ,(1518,11,03,00,29, Wake)
+                       ,(1518,11,04,00,02, Guard 99)
+                       ,(1518,11,04,00,36, Sleep)
+                       ,(1518,11,04,00,46, Wake)
+                       ,(1518,11,05,00,03, Guard 99)
+                       ,(1518,11,05,00,45, Sleep)
+                       ,(1518,11,05,00,55, Wake)]
+            M.toList (M.map totalTimeAsleep (collect evts))
+                  `shouldBe` [(10,50),(99,30)]
+            M.toList (M.map maxSleepMinute (collect evts))
+                  `shouldBe` [(10,24),(99,45)]
+                
 
                    
