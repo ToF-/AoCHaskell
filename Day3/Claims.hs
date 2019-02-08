@@ -29,3 +29,9 @@ overlap (_,x0,y0,w0,h0) (_,x1,y1,w1,h1) | x0 >= x1+w1 = False
                                         | y1 >= y0+h0 = False
                                         | otherwise = True
     
+claimId :: Patch -> ClaimId
+claimId (i,_,_,_,_) = i
+
+notOverlapping :: [Patch] -> ClaimId
+notOverlapping ps = claimId (head (L.filter (\p ->  
+    all (\q -> not (overlap p q)) (L.filter (/=p ) ps)) ps))

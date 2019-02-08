@@ -16,6 +16,11 @@ main = hspec $ do
             overlap c3 c1  `shouldBe` False
             overlap c3 c2  `shouldBe` False
 
+    describe "not overlapping" $ do
+        it "should tell which claim is not overlapping the others" $ do
+            notOverlapping small `shouldBe` 3 
+            notOverlapping large `shouldBe` 506
+
 
 small = [(1,1,3,4,4)
         ,(2,3,1,4,4)
