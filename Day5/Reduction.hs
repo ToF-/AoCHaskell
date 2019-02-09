@@ -13,6 +13,12 @@ reduce = foldr reduction ""
     reduction c (d:ds) | opposite c d = ds
     reduction c cs = c : cs 
 
+reduce' :: String -> String
+reduce' = foldl (flip reduction) ""
+    where
+    reduction c (d:ds) | opposite c d = ds
+    reduction c cs = c : cs 
+
 remove :: String -> Int
 remove s = head (sort 
     (map (length . reduce . flip removeUnit s) ['A'..'Z']))

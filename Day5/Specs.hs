@@ -17,6 +17,7 @@ main = hspec $ do
             reduce "Aaa" `shouldBe` "a"
             reduce "dabAcCaCBAcCcaDA" `shouldBe` "dabCBAcaDA"
             length (reduce large)  `shouldBe` 10584
+            length (reduce' large)  `shouldBe` 10584
     describe "remove one unit" $ do
         it "should remove one unit" $ do
             removeUnit 'A' "dabAcCaCBAcCcaDA" 
