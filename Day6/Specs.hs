@@ -57,6 +57,35 @@ main = hspec $ do
             largest small  `shouldBe` 17
             largest large  `shouldBe` 4215
 
+    describe "distances to all" $ do
+        it "tells the sum of the distances to each point at every coord" $ do
+            distanceToAll small `shouldBe`
+                [[54,48,46,44,44,44,46,48,50,56]
+                ,[48,42,40,38,38,38,40,42,44,50]
+                ,[44,38,36,34,34,34,36,38,40,46]
+                ,[40,34,32,30,30,30,32,34,36,42]
+                ,[38,32,30,28,28,28,30,32,34,40]
+                ,[38,32,30,28,28,28,30,32,34,40]
+                ,[40,34,32,30,30,30,32,34,36,42]
+                ,[44,38,36,34,34,34,36,38,40,46]
+                ,[48,42,40,38,38,38,40,42,44,50]
+                ,[52,46,44,42,42,42,44,46,48,54]
+                ,[58,52,50,48,48,48,50,52,54,60]]
+    describe "safe region size" $ do
+        it "tells the size of the region where distances are below a number" $ do
+            safeRegionSize small 32 `shouldBe` 16
+            safeRegionSize large 10000 `shouldBe` 40376
+-- ..........
+-- .A........
+-- ..........
+-- ...###..C.
+-- ..#D###...
+-- ..###E#...
+-- .B.###....
+-- ..........
+-- ..........
+-- ........F.
+
 
 
 -- aaaaa.cccc

@@ -66,4 +66,17 @@ largest coords = let
     points = sort (filter (\p -> not (p `elem` inf)) (catMaybes (concatMap (map point) z)))
     in head $ sortBy (flip compare) $ map length (group points)
 
+distanceToAll :: [Coord] -> [[Int]]
+distanceToAll coords = let
+    (w,h) = ((maximum (map fst coords))+2, (maximum (map snd coords))+2)
+    in map (\row ->
+            map (\col ->
+                sum (map (\(x,y) -> 
+                    (abs (x-col)) + (abs (y-row))
+                ) coords)
+           ) [0..w-1]
+    ) [0..h-1]
+
+safeRegionSize :: [Coord] -> Int -> Int
+safeRegionSize coords max = length (filter (<max) (concat (distanceToAll coords)))
 
