@@ -11,38 +11,35 @@ small = [(C,A)
         ,(D,E)
         ,(F,E)]
 
-tiny = [(Q,S)
+tiny = [(Q,Y)
+       ,(Q,C)
+       ,(Q,I)
        ,(I,Y)
        ,(I,S)
-       ,(Q,Y)
        ,(C,Y)
        ,(S,Y)]
 
 main = hspec $ do
-    let g = graph small
-    let gg= graph large
-    let t = graph tiny
-    describe "graph" $ do
-        it "creates a graph of all steps" $ do
-            let l = L.sort $ M.toList $ g
-                m = L.sort $ M.toList $ t
-            l `shouldBe` [(A,[C]),(B,[A]),(D,[A]),(E,[B,D,F]),(F,[C])]
-            m `shouldBe` [(S,[I,Q]),(Y,[C,I,Q,S])]
+    describe "pred list" $ do
+        it "creates a list of all predecessors of all steps" $ do
+            (sort (M.toList (predList small))) `shouldBe` [(A,[C]),(B,[A]),(D,[A]),(E,[B,D,F]),(F,[C])]
+            (sort (M.toList (predList tiny))) `shouldBe` [(C,[Q]),(I,[Q]),(S,[I]),(Y,[C,I,Q,S])]
 
-    describe "priority" $ do
-        it "creates a priority list for the steps" $ do
-            let l = priority g
-            let lt = priority t
-            l `shouldBe` [(C,3),(A,2),(B,1),(D,1),(F,1),(E,0)]
-            lt `shouldBe` [(Q,3),(I,2),(C,1),(S,1),(Y,0)]
+    describe "succ list" $ do
+        it "creates a list of all successors of all steps" $ do
+            (sort (M.toList (succList small))) `shouldBe` [(A,[B,D]),(B,[E]),(C,[A,F]),(D,[E]),(F,[E])]
+            (sort (M.toList (succList tiny))) `shouldBe` [(C,[Y]),(I,[S,Y]),(Q,[C,I,Y]),(S,[Y])]
 
+    describe "start step" $ do
+        it "tells wich steps are starting steps from succ list" $ do
+            startSteps (succList small)  `shouldBe` [C]
+            startSteps (succList tiny)  `shouldBe` [Q]
+            startSteps (succList large)  `shouldBe` [B,E,U,V]
 
     describe "steps" $ do
-        it "tells which steps to do in which order" $ do
-            let s = steps g
-            s `shouldBe` "CABDFE"
-            let st = steps t
-            st `shouldBe` "QCISY"
+        it "tells which steps to execute in which order" $ do
+            concatMap show (steps small)  `shouldBe` "CABDFE"
+            
 
 large=
     [(V,H)
