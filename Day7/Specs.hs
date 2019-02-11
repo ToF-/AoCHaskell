@@ -31,18 +31,18 @@ main = hspec $ do
 
     describe "priority" $ do
         it "creates a priority list for the steps" $ do
-            let l = L.sort $ M.toList $ priority g
-            let lt = L.sort $ M.toList $ priority t
-            l `shouldBe` [(A,2),(B,1),(C,3),(D,1),(E,0),(F,1)]
-            lt `shouldBe` [(C,1),(I,1),(Q,2),(S,1),(Y,0)]
+            let l = priority g
+            let lt = priority t
+            l `shouldBe` [(C,3),(A,2),(B,1),(D,1),(F,1),(E,0)]
+            lt `shouldBe` [(Q,3),(I,2),(C,1),(S,1),(Y,0)]
 
 
     describe "steps" $ do
         it "tells which steps to do in which order" $ do
-            let l = concatMap show $ steps g
-            l `shouldBe` "CABDFE"
-            let lt = concatMap show $ steps t
-            lt `shouldBe` "QCISY"
+            let s = steps g
+            s `shouldBe` "CABDFE"
+            let st = steps t
+            st `shouldBe` "QCISY"
 
 large=
     [(V,H)
