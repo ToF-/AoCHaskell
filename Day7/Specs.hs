@@ -11,28 +11,38 @@ small = [(C,A)
         ,(D,E)
         ,(F,E)]
 
+tiny = [(Q,S)
+       ,(I,Y)
+       ,(I,S)
+       ,(Q,Y)
+       ,(C,Y)
+       ,(S,Y)]
+
 main = hspec $ do
     let g = graph small
     let gg= graph large
+    let t = graph tiny
     describe "graph" $ do
         it "creates a graph of all steps" $ do
             let l = L.sort $ M.toList $ g
-                ll= L.sort $ M.toList $ gg
+                m = L.sort $ M.toList $ t
             l `shouldBe` [(A,[C]),(B,[A]),(D,[A]),(E,[B,D,F]),(F,[C])]
+            m `shouldBe` [(S,[I,Q]),(Y,[C,I,Q,S])]
 
     describe "priority" $ do
         it "creates a priority list for the steps" $ do
             let l = L.sort $ M.toList $ priority g
-            let ll = L.sort $ M.toList $ priority gg
+            let lt = L.sort $ M.toList $ priority t
             l `shouldBe` [(A,2),(B,1),(C,3),(D,1),(E,0),(F,1)]
-            ll `shouldBe` [(A,9),(B,10),(C,1),(D,7),(E,8),(F,7),(G,6),(H,4),(I,2),(J,6),(K,4),(L,7),(M,5),(N,7),(O,6),(P,8),(Q,3),(R,7),(S,1),(T,9),(U,10),(V,10),(W,9),(X,5),(Y,0),(Z,4)]
+            lt `shouldBe` [(C,1),(I,1),(Q,2),(S,1),(Y,0)]
+
 
     describe "steps" $ do
         it "tells which steps to do in which order" $ do
             let l = concatMap show $ steps g
             l `shouldBe` "CABDFE"
-            let ll = concatMap show $ steps gg
-            ll `shouldBe` ""
+            let lt = concatMap show $ steps t
+            lt `shouldBe` "QCISY"
 
 large=
     [(V,H)
