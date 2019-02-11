@@ -54,6 +54,13 @@ main = hspec $ do
             concatMap show (steps tiny)   `shouldBe` "QCISY"
             concatMap show (steps large)   `shouldBe` "BETUFNVADWGPLRJOHMXKZQCISY"
 
+    describe "critical paths" $ do
+        it "tells the critical time from any step with a given basis" $ do
+            (sort (M.toList (criticalPaths 0 (predList small))))  
+                `shouldBe` [(A,10),(B,7),(C,14),(D,9),(E,5),(F,11)]
+            (sort (M.toList (criticalPaths 1000 (predList tiny))))  
+                `shouldBe` [(C,2028),(I,3053),(Q,4070),(S,2044),(Y,1025)]
+
 large=
     [(V,H)
     ,(U,R)
