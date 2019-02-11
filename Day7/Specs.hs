@@ -11,6 +11,12 @@ small = [(C,A)
         ,(D,E)
         ,(F,E)]
 
+--       -->A--->B--
+--      /    \      \
+--     C      -->D----->E
+--      \           /
+--       ---->F-----
+
 tiny = [(Q,Y)
        ,(Q,C)
        ,(Q,I)
@@ -18,6 +24,12 @@ tiny = [(Q,Y)
        ,(I,S)
        ,(C,Y)
        ,(S,Y)]
+
+--      -->I--->S--
+--     /    \      \
+--    Q------------>Y
+--     \           /
+--      ---->C-----
 
 main = hspec $ do
     describe "pred list" $ do
@@ -39,7 +51,8 @@ main = hspec $ do
     describe "steps" $ do
         it "tells which steps to execute in which order" $ do
             concatMap show (steps small)  `shouldBe` "CABDFE"
-            
+            concatMap show (steps tiny)   `shouldBe` "QCISY"
+            concatMap show (steps large)   `shouldBe` "BETUFNVADWGPLRJOHMXKZQCISY"
 
 large=
     [(V,H)

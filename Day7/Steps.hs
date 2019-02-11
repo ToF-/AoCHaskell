@@ -33,17 +33,17 @@ startSteps m = sort (L.filter (\n -> not (n `elem` succs)) nodes)
     nodes = M.keys m
 
 steps :: [Edge] -> [Node]
-steps es = let
+steps es = fst (visit ([],startSteps succs))
+    where
     succs = succList es
     preds = predList es
-  in fst (addSteps succs preds ([],(startSteps succs)))
-
-addSteps :: NodeList -> NodeList -> ([Node],[Node]) -> ([Node],[Node])
-addSteps _ _ (visited,[]) = (visited,[])
-addSteps succs preds (visited,(n:ns)) = case M.lookup n succs of
-    Nothing -> (visited,[])
-    Just (s:ss) -> case fmap (L.filter (\n -> not (n `elem` visited))) (M.lookup n preds) of
-        Just [] -> (visited++[n],[s])
-        _ -> addSteps succs preds (visited ,ss) 
-            
-
+    visit (vs,[]) = (vs,[])
+    visit (vs,(n:ns)) = case fmap (L.filter allPredVisited) (M.lookup n succs) of
+        Just [] -> visit (vs',ns) 
+        Just ss -> visit (vs',sort (ss ++ ns)) 
+        Nothing -> visit (vs',ns)
+        where 
+        vs' = vs ++ [n]
+        allPredVisited n = case fmap (all (`elem` vs')) (M.lookup n preds) of
+            Nothing -> True
+            Just b -> b
