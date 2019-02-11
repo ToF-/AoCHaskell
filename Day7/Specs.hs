@@ -3,6 +3,7 @@ import Steps
 import Data.Map as M
 import Data.List as L
 
+import Data.Ord
 small = [(C,A)
         ,(C,F)
         ,(A,B)
@@ -60,6 +61,7 @@ main = hspec $ do
                 `shouldBe` [(A,10),(B,7),(C,14),(D,9),(E,5),(F,11)]
             (sort (M.toList (criticalPaths 1000 (predList tiny))))  
                 `shouldBe` [(C,2028),(I,3053),(Q,4070),(S,2044),(Y,1025)]
+            
 
 large=
     [(V,H)
