@@ -53,6 +53,8 @@ example :
   * the minimal duration for a step (e.g. 0 or 60)
   * the step duration of each step (time of A = minimum+1, time of B = minimum+2, etc.)
 * start with the steps having no predecessors N, the list should always be sorted by critical time, (then albhabetical) descending
-* 
+* while there are steps in N
+  * select the step with the longest critical time
+  *  
 
 
