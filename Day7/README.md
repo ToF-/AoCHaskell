@@ -53,8 +53,11 @@ example :
   * the minimal duration for a step (e.g. 0 or 60)
   * the step duration of each step (time of A = minimum+1, time of B = minimum+2, etc.)
 * start with the steps having no predecessors N, the list should always be sorted by critical time, (then albhabetical) descending
-* while there are steps in N
-  * select the step with the longest critical time
-  *  
+* while the last step is not done
+  * while there are steps in N
+    * select the step S with the longest critical time
+    * assign that step S to the worker with the least amount of time spent
+    * put that step S in the DONE list
+    * add in N the successors of S for which all predecessors have been done 
 
 
