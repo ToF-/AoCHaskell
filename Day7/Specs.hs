@@ -62,6 +62,16 @@ main = hspec $ do
             (sort (M.toList (criticalPaths 1000 (predList tiny))))  
                 `shouldBe` [(C,2028),(I,3053),(Q,4070),(S,2044),(Y,1025)]
             
+    describe "assign" $ do
+        it "given a list of workers, assign a step to the least loaded worker" $ do
+            let ws  = [[],[Idle 1],[Idle 2]]
+                ws' = assign A 3 ws
+                ws''= assign B 2 ws'
+                ws'''= assign C 2 ws''
+            ws' `shouldBe` [[Work A 3],[Idle 1],[Idle 2]]
+            ws'' `shouldBe` [[Work A 3],[Idle 1,Work B 2],[Idle 2]]
+            ws''' `shouldBe` [[Work A 3],[Idle 1,Work B 2],[Idle 2,Work C 2]]
+            
 
 large=
     [(V,H)

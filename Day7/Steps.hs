@@ -12,6 +12,11 @@ type Time = Int
 data Step = A|B|C|D|E|F|G|H|I|J|K|L|M|N|O|P|Q|R|S|T|U|V|W|X|Y|Z
     deriving (Eq,Ord,Show,Enum)
 
+data Work = Work Step Time | Idle Time
+    deriving (Eq,Show)
+           
+type Worker = [Work]
+
 predList :: [Edge] -> StepList 
 predList = L.foldl addPreds M.empty 
 
@@ -63,3 +68,24 @@ criticalPaths base preds = addCriticalPath 0 M.empty target
         where
         t' = t + base + 1 + fromEnum n
         m' = M.insert n t' m
+
+assign :: Step -> Time -> [Worker] -> [Worker]
+assign s t ws = assignWorker leastLoaded s t ws
+    where
+    leastLoaded :: Int
+    leastLoaded = snd (head (sortBy (comparing workLoad)
+         (zip ws [0..])))
+
+    workLoad :: (Worker,Int) -> Time
+    workLoad = sum . L.map workTime . fst
+        where 
+        workTime :: Work -> Time
+        workTime (Work _ t) = t
+        workTime (Idle t)   = t
+    
+    assignWorker :: Int -> Step -> Time -> [Worker] -> [Worker]
+    assignWorker 0 s t (w:ws) = ((w++[Work s t]):ws)
+    assignWorker n s t (w:ws) = w : assignWorker (pred n) s t ws 
+
+    
+
