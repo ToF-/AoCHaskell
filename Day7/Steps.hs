@@ -142,10 +142,9 @@ idle sc = L.map addIdle sc
 schedule :: Int -> [Edge] -> Schedule
 schedule n es = schedule' (assignNext (replicate n []) succs preds cp)
     where
-
     succs = succList es
     preds = predList es
     cp = criticalPaths 0 preds
-    schedule' sc = if sc' == sc then sc else sc' 
-        where
-        sc' = assignNext sc succs preds cp
+    schedule' sc = if sc' == sc then sc else []
+        where 
+        sc' = (assignNext sc succs preds cp)

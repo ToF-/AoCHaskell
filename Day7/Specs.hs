@@ -188,6 +188,8 @@ main = hspec $ do
             stepsDone sc' `shouldBe` [C,B]
             let sc = [[Job C 3],[Idle 3,Job F 6],[Idle 3]]
             stepsDone sc `shouldBe` [C]
+            stepsDone [[Job C 3],[Idle 3],[Idle 3]] `shouldBe` [C]
+
 
     describe "next steps" $ do
         let succ = succList small
@@ -202,6 +204,7 @@ main = hspec $ do
             doing sc  `shouldBe` [F]
             stepsDone sc `shouldBe` [C]
             nextSteps sc succ pred cp `shouldBe` [A]
+            nextSteps [[Job C 3],[Idle 3],[Idle 3]] succ pred cp `shouldBe` [F,A]
 
     describe "assign next" $ do
         let succ = succList small
@@ -210,6 +213,13 @@ main = hspec $ do
         it "assigns the next steps to the first worker done" $ do
             let sc = [[Job C 3],[Idle 3],[Idle 3]]
             assignNext sc succ pred cp  `shouldBe` [[Job C 3,Job F 6],[Idle 3,Job A 1],[Idle 3]]
+            let sc =  [[Job C 3,Job F 6],[Idle 3,Job A 1],[Idle 3]]
+            stepsDone sc `shouldBe` [C]
+            doing sc  `shouldBe` [F,A]
+            nextSteps sc succ pred cp `shouldBe` [A]
+            assignNext sc succ pred cp  `shouldBe` [[Job C 3,Job F 6],[Idle 3,Job A 1],[Idle 3]]
+
+
 
         it "starts with first steps in case schedule is empty" $ do 
             assignNext [[],[],[]] succ pred cp  `shouldBe` [[Job C 3],[],[]]
@@ -219,5 +229,5 @@ main = hspec $ do
             idle [[],[Job C 3],[]]  `shouldBe`  [[Idle 3],[Job C 3],[Idle 3]]
     describe "schedule" $ do
         it "schedule the steps for a list of edges" $ do
-            schedule 3 small `shouldBe` [[Job C 3],[Idle 3],[Idle 3]]
+            schedule 3 small `shouldBe` []
 
