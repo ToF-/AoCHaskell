@@ -4,6 +4,7 @@ import Data.Map as M
 import Data.List as L
 import Data.Set as S
 import Data.Ord
+import Data.Maybe
 
 type Edge = (Step,Step)
 type StepList = Map Step [Step]
@@ -99,3 +100,21 @@ stepsDoneAt t sch = concatMap (fst . (L.foldl (addStepsBefore t) ([],0))) sch
     addStepsBefore t (w,tt)  j@(Idle jt) = (w,tt+jt)
     addStepsBefore t (w,tt) j@(Job s jt) | tt + jt <= t = (w ++ [s],tt+jt)
                                          | otherwise = (w,tt)
+
+nextSteps :: Schedule -> StepList -> StepList -> Map Step Time -> [Step]
+nextSteps sch succs preds cp = sortBy (flip (comparing (`M.lookup` cp))) next
+    where
+    next = L.filter (allPrecsDone) (concat (catMaybes (L.map (`M.lookup` succs) done)))
+    allPrecsDone s = case M.lookup s preds of
+        Nothing -> True
+        Just ps -> all (\s -> not (s `elem` doing sch) && (s `elem` done)) ps
+    done = stepsDone sch
+
+
+
+doing :: Schedule -> [Step]
+doing sch = L.filter (not . (`elem` (stepsDone sch))) (catMaybes (L.map step (concat sch)))
+    where
+    step :: Job -> Maybe Step
+    step (Job s _) = Just s
+    step (Idle _) = Nothing

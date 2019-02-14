@@ -178,12 +178,28 @@ main = hspec $ do
             
     describe "steps done" $ do
         it "given a worker schedule, tell the steps that are done at the time when the least loaded worker is done" $ do
-            let sc = [[Job A 3],[Idle 1,Job B 2],[Idle 2]]
-            let sc'= [[Job A 3],[Idle 1,Job B 2],[Idle 2,Job C 2]]
+            let sc = [[Job C 3],[Idle 1,Job B 2],[Idle 2]]
+            let sc'= [[Job C 3],[Idle 1,Job B 2],[Idle 2,Job C 3]]
             L.map timeWhenDone sc `shouldBe` [3,3,2]
-            L.map timeWhenDone sc' `shouldBe` [3,3,4]
+            L.map timeWhenDone sc' `shouldBe` [3,3,5]
             stepsDone sc `shouldBe` stepsDoneAt 2 sc
             stepsDone sc' `shouldBe` stepsDoneAt 3 sc'
             stepsDone sc `shouldBe` []
-            stepsDone sc' `shouldBe` [A,B]
+            stepsDone sc' `shouldBe` [C,B]
+            let sc = [[Job C 3],[Idle 3,Job F 6],[Idle 3]]
+            stepsDone sc `shouldBe` [C]
+
+    describe "next steps" $ do
+        let succ = succList small
+            pred = predList small
+            cp = criticalPaths 0 (pred)
+        it ("given a work schedule, succ and pred list, and a critical time table," ++ 
+           "tells the next step to be doing, in descending order of critical time") $ do
+            let sc = [[Job C 3],[Idle 3],[Idle 3]]
+            nextSteps sc succ pred cp `shouldBe` [F,A]
+
+            let sc = [[Job C 3],[Idle 3,Job F 6],[Idle 3]]
+            doing sc  `shouldBe` [F]
+            stepsDone sc `shouldBe` [C]
+            nextSteps sc succ pred cp `shouldBe` [A]
 
