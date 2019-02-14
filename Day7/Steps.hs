@@ -104,10 +104,10 @@ stepsDoneAt t sch = concatMap (fst . (L.foldl (addStepsBefore t) ([],0))) sch
 nextSteps :: Schedule -> StepList -> StepList -> Map Step Time -> [Step]
 nextSteps sch succs preds cp = sortBy (flip (comparing (`M.lookup` cp))) next
     where
-    next = L.filter (allPrecsDone) (concat (catMaybes (L.map (`M.lookup` succs) done)))
+    next = L.filter (\s-> allPrecsDone s && not (s `elem` doing sch)) (concat (catMaybes (L.map (`M.lookup` succs) done)))
     allPrecsDone s = case M.lookup s preds of
         Nothing -> True
-        Just ps -> all (\s -> not (s `elem` doing sch) && (s `elem` done)) ps
+        Just ps -> all (`elem` done) ps
     done = stepsDone sch
 
 
@@ -118,3 +118,34 @@ doing sch = L.filter (not . (`elem` (stepsDone sch))) (catMaybes (L.map step (co
     step :: Job -> Maybe Step
     step (Job s _) = Just s
     step (Idle _) = Nothing
+
+assignNext :: Schedule -> StepList -> StepList -> Map Step Time -> Schedule
+assignNext sc succs preds cp | concat sc == [] 
+    = L.foldl (\sc s -> assign s (time s) sc) sc (startSteps succs)
+assignNext sc succs preds cp = case nextSteps sc succs preds cp of
+    [] -> idle sc
+    ss -> L.foldl (\sc s -> assign s (time s) sc) sc ss
+
+time :: Step -> Time
+time s = fromEnum s + 1 
+
+idle :: Schedule -> Schedule 
+idle sc = L.map addIdle sc
+    where
+    addIdle w = if (total w < max) then w ++ [Idle (max - (total w))] else w
+    total w = L.foldl addTime 0 w
+        where
+        addTime tt (Job _ t) = tt + t
+        addTime tt (Idle t)  = tt + t
+    max = maximum (L.map total sc)
+
+schedule :: Int -> [Edge] -> Schedule
+schedule n es = schedule' (assignNext (replicate n []) succs preds cp)
+    where
+
+    succs = succList es
+    preds = predList es
+    cp = criticalPaths 0 preds
+    schedule' sc = if sc' == sc then sc else sc' 
+        where
+        sc' = assignNext sc succs preds cp
