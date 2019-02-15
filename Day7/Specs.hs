@@ -162,6 +162,7 @@ main = hspec $ do
     describe "schedule" $ do
         let sc = schedule 3 0 small
             sc'= schedule 2 1000 tiny
+            sc''= schedule 5 60 large
             sc1 = assignJob sc A 
             sc11 = assignJob sc1 F
             sc12 = assignJob sc11 B
@@ -184,7 +185,6 @@ main = hspec $ do
         describe "assign job" $ do
             it "assigns a step for the step time in the todo with the smaller available time" $ do
                 jobs sc1  `shouldBe` [[Job A 1],[],[]]
-
                 jobs sc2 `shouldBe` [[Job C 1003],[]]
                 jobs sc11 `shouldBe` [[Job A 1],[Job F 6],[]]
                 jobs sc12 `shouldBe` [[Job A 1],[Job F 6],[Job B 2]]
@@ -196,4 +196,15 @@ main = hspec $ do
                 jobs (fillUntil A sc)  `shouldBe` [[],[],[]]
                 jobs (fillUntil A sc1)  `shouldBe` [[Job A 1],[Idle 1],[Idle 1]]
                 jobs (fillUntil F sc13)  `shouldBe` [[Job A 1,Job D 4,Idle 1],[Job F 6],[Job B 2,Idle 4]]
+
+        describe "start" $ do
+            it "assigns the first steps on a schedule ordered by critical time" $ do
+                jobs (start sc) `shouldBe` [[Job C 3],[],[]]
+                jobs (start sc') `shouldBe` [[Job Q 1017],[]]
+                M.lookup E (criticalPaths sc'') `shouldBe` Just 527
+                M.lookup B (criticalPaths sc'') `shouldBe` Just 468
+                M.lookup V (criticalPaths sc'') `shouldBe` Just 332
+                M.lookup U (criticalPaths sc'') `shouldBe` Just 331
+                
+                jobs (start sc'') `shouldBe` [[Job B 62],[Job E 65],[Job U 81],[Job V 82],[]]
             

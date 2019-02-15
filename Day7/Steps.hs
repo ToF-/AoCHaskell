@@ -124,5 +124,10 @@ findJob s ([]:ts) = findJob s ts
 fill :: Time -> [Todo] -> [Todo]
 fill tt = L.map (\j -> if workLoad j < tt then (Idle (tt - workLoad j) : j) else j)
          
+start :: Schedule -> Schedule
+start sc = L.foldl assignJob sc firstSteps 
+    where
+    firstSteps :: [Step]
+    firstSteps = sortBy (flip (comparing (\s -> s `M.lookup` (criticalPaths sc)))) (startSteps (successors sc))
 
 jobs = L.map reverse . todos
