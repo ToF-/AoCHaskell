@@ -24,7 +24,8 @@ data Schedule = Schedule {
     todos :: [Todo],
     successors :: StepList,
     predecessors :: StepList,
-    criticalPaths :: CriticalTime
+    criticalPaths :: CriticalTime,
+    nextSteps :: [Step]
 } 
 
 predList :: [Edge] -> StepList 
@@ -86,6 +87,7 @@ schedule n b es = Schedule
     (succList es)
     preds
     (makeCriticalPaths b preds)
+    []
     where
     preds = predList es
 
@@ -125,7 +127,7 @@ fill :: Time -> [Todo] -> [Todo]
 fill tt = L.map (\j -> if workLoad j < tt then (Idle (tt - workLoad j) : j) else j)
          
 start :: Schedule -> Schedule
-start sc = L.foldl assignJob sc firstSteps
+start sc = sc { nextSteps = firstSteps }
     where
     firstSteps :: [Step]
     firstSteps = sortBy (flip (comparing (\s -> s `M.lookup` (criticalPaths sc)))) (startSteps (successors sc))

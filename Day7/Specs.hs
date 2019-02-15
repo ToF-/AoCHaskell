@@ -198,14 +198,12 @@ main = hspec $ do
                 jobs (fillUntil F sc13)  `shouldBe` [[Job A 1,Job D 4,Idle 1],[Job F 6],[Job B 2,Idle 4]]
 
         describe "start" $ do
-            it "assigns the first steps on a schedule ordered by critical time" $ do
-                jobs (start sc) `shouldBe` [[Job C 3],[],[]]
-                jobs (start sc') `shouldBe` [[Job Q 1017],[]]
+            it "assigns the first next steps on a schedule ordered by critical time" $ do
+                nextSteps (start sc) `shouldBe` [C]
+                nextSteps (start sc') `shouldBe` [Q]
                 M.lookup E (criticalPaths sc'') `shouldBe` Just 527
                 M.lookup B (criticalPaths sc'') `shouldBe` Just 468
                 M.lookup V (criticalPaths sc'') `shouldBe` Just 332
                 M.lookup U (criticalPaths sc'') `shouldBe` Just 331
-                let ss = sortBy (flip (comparing (\s -> s `M.lookup` (criticalPaths sc'')))) (startSteps (successors sc''))    
-                ss  `shouldBe` [E,B,V,U]
-                jobs (start sc'') `shouldBe` [[Job E 65],[Job B 62],[Job V 82],[Job U 81],[]]
+                nextSteps (start sc'')  `shouldBe` [E,B,V,U]
             
