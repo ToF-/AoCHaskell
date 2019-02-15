@@ -17,8 +17,15 @@ data Step = A|B|C|D|E|F|G|H|I|J|K|L|M|N|O|P|Q|R|S|T|U|V|W|X|Y|Z
 data Job = Job Step Time | Idle Time
     deriving (Eq,Show)
            
-type Worker = [Job]
-type Schedule = [Worker]
+type CriticalTime = Map Step Time
+type Todo = [Job]
+data Schedule = Schedule { 
+    base :: Time,
+    todos :: [Todo],
+    successors :: StepList,
+    predecessors :: StepList,
+    criticalPaths :: CriticalTime
+} 
 
 predList :: [Edge] -> StepList 
 predList = L.foldl addPreds M.empty 
@@ -57,8 +64,8 @@ steps es = fst (visit ([],startSteps succs))
             Nothing -> True
             Just b -> b
 
-criticalPaths :: Time -> StepList -> Map Step Time
-criticalPaths base preds = addCriticalPath 0 M.empty target
+makeCriticalPaths :: Time -> StepList -> Map Step Time
+makeCriticalPaths base preds = addCriticalPath 0 M.empty target
     where
     target = head (L.filter (\n -> not(n `elem` allPreds)) steps)
     allPreds = L.concat (M.elems preds)
@@ -72,79 +79,33 @@ criticalPaths base preds = addCriticalPath 0 M.empty target
         t' = t + base + 1 + fromEnum n
         m' = M.insert n t' m
 
-indexOfFirstDone :: Schedule -> Index
-indexOfFirstDone ws = snd (head (sortBy (comparing (timeWhenDone . fst)) (zip ws [0..])))
-
-timeWhenDone :: Worker -> Time
-timeWhenDone = sum . L.map workTime 
-    where 
-    workTime :: Job -> Time
-    workTime (Job _ t) = t
-    workTime (Idle t)   = t
-
-assign :: Step -> Time -> Schedule -> Schedule
-assign s t sch = assignWorker (indexOfFirstDone sch) s t sch
+schedule ::  Int -> Time -> [Edge] -> Schedule
+schedule n b es = Schedule 
+    b 
+    (replicate n []) 
+    (succList es)
+    preds
+    (makeCriticalPaths b preds)
     where
-    
-    assignWorker :: Int -> Step -> Time -> Schedule -> Schedule
-    assignWorker 0 s t (w:ws) = ((w++[Job s t]):ws)
-    assignWorker n s t (w:ws) = w : assignWorker (pred n) s t ws 
-
-stepsDone :: Schedule -> [Step]
-stepsDone sch = stepsDoneAt (timeWhenDone (sch!!(indexOfFirstDone sch))) sch
-
-stepsDoneAt :: Time -> Schedule -> [Step]
-stepsDoneAt t sch = concatMap (fst . (L.foldl (addStepsBefore t) ([],0))) sch
-    where
-    addStepsBefore :: Time -> ([Step],Time) -> Job -> ([Step],Time)
-    addStepsBefore t (w,tt)  j@(Idle jt) = (w,tt+jt)
-    addStepsBefore t (w,tt) j@(Job s jt) | tt + jt <= t = (w ++ [s],tt+jt)
-                                         | otherwise = (w,tt)
-
-nextSteps :: Schedule -> StepList -> StepList -> Map Step Time -> [Step]
-nextSteps sch succs preds cp = sortBy (flip (comparing (`M.lookup` cp))) next
-    where
-    next = L.filter (\s-> allPrecsDone s && not (s `elem` doing sch)) (concat (catMaybes (L.map (`M.lookup` succs) done)))
-    allPrecsDone s = case M.lookup s preds of
-        Nothing -> True
-        Just ps -> all (`elem` done) ps
-    done = stepsDone sch
-
-
-
-doing :: Schedule -> [Step]
-doing sch = L.filter (not . (`elem` (stepsDone sch))) (catMaybes (L.map step (concat sch)))
-    where
-    step :: Job -> Maybe Step
-    step (Job s _) = Just s
-    step (Idle _) = Nothing
-
-assignNext :: Schedule -> StepList -> StepList -> Map Step Time -> Schedule
-assignNext sc succs preds cp | concat sc == [] 
-    = L.foldl (\sc s -> assign s (time s) sc) sc (startSteps succs)
-assignNext sc succs preds cp = case nextSteps sc succs preds cp of
-    [] -> idle sc
-    ss -> L.foldl (\sc s -> assign s (time s) sc) sc ss
-
-time :: Step -> Time
-time s = fromEnum s + 1 
-
-idle :: Schedule -> Schedule 
-idle sc = L.map addIdle sc
-    where
-    addIdle w = if (total w < max) then w ++ [Idle (max - (total w))] else w
-    total w = L.foldl addTime 0 w
-        where
-        addTime tt (Job _ t) = tt + t
-        addTime tt (Idle t)  = tt + t
-    max = maximum (L.map total sc)
-
-schedule :: Int -> [Edge] -> Schedule
-schedule n es = schedule' (assignNext (replicate n []) succs preds cp)
-    where
-    succs = succList es
     preds = predList es
-    cp = criticalPaths 0 preds
-    schedule' sc = if sc' == sc then sc else []
-        where 
-        sc' = (assignNext sc succs preds cp)
+
+availableTime :: Schedule -> Time
+availableTime = minimum . L.map workLoad . todos
+    
+assignJob :: Schedule -> Step -> Schedule
+assignJob sc s = sc { todos = todos' }
+    where
+    i = snd (minimum (zip (L.map workLoad (todos sc)) [0..]))
+    todos' = replace i ((todos sc)!!i ++ [Job s (stepTime s)]) (todos sc)
+    
+    replace i a as = (L.take i as) ++ [a] ++ (L.drop (succ i) as)
+
+    stepTime s = fromEnum s + 1 + base sc
+
+workLoad :: [Job] -> Time
+workLoad = sum . L.map time
+    where
+    time :: Job -> Time 
+    time (Job _ t) = t
+    time (Idle t)  = t
+    

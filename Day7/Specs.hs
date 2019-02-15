@@ -159,75 +159,35 @@ main = hspec $ do
             concatMap show (steps tiny)   `shouldBe` "QCISY"
             concatMap show (steps large)   `shouldBe` "BETUFNVADWGPLRJOHMXKZQCISY"
 
-    describe "critical paths" $ do
-        it "tells the critical time from any step with a given basis" $ do
-            (sort (M.toList (criticalPaths 0 (predList small))))  
-                `shouldBe` [(A,10),(B,7),(C,14),(D,9),(E,5),(F,11)]
-            (sort (M.toList (criticalPaths 1000 (predList tiny))))  
-                `shouldBe` [(C,2028),(I,3053),(Q,4070),(S,2044),(Y,1025)]
-            
-    describe "assign" $ do
-        it "given a worker schedule, assign a step to the least loaded worker" $ do
-            let s  = [[],[Idle 1],[Idle 2]] -- Idle counts a work load
-                s' = assign A 3 s
-                s''= assign B 2 s'
-                s'''= assign C 2 s''
-            s' `shouldBe` [[Job A 3],[Idle 1],[Idle 2]]
-            s'' `shouldBe` [[Job A 3],[Idle 1,Job B 2],[Idle 2]]
-            s''' `shouldBe` [[Job A 3],[Idle 1,Job B 2],[Idle 2,Job C 2]]
-            
-    describe "steps done" $ do
-        it "given a worker schedule, tell the steps that are done at the time when the least loaded worker is done" $ do
-            let sc = [[Job C 3],[Idle 1,Job B 2],[Idle 2]]
-            let sc'= [[Job C 3],[Idle 1,Job B 2],[Idle 2,Job C 3]]
-            L.map timeWhenDone sc `shouldBe` [3,3,2]
-            L.map timeWhenDone sc' `shouldBe` [3,3,5]
-            stepsDone sc `shouldBe` stepsDoneAt 2 sc
-            stepsDone sc' `shouldBe` stepsDoneAt 3 sc'
-            stepsDone sc `shouldBe` []
-            stepsDone sc' `shouldBe` [C,B]
-            let sc = [[Job C 3],[Idle 3,Job F 6],[Idle 3]]
-            stepsDone sc `shouldBe` [C]
-            stepsDone [[Job C 3],[Idle 3],[Idle 3]] `shouldBe` [C]
-
-
-    describe "next steps" $ do
-        let succ = succList small
-            pred = predList small
-            cp = criticalPaths 0 (pred)
-        it ("given a work schedule, succ and pred list, and a critical time table," ++ 
-           "tells the next step to be doing, in descending order of critical time") $ do
-            let sc = [[Job C 3],[Idle 3],[Idle 3]]
-            nextSteps sc succ pred cp `shouldBe` [F,A]
-
-            let sc = [[Job C 3],[Idle 3,Job F 6],[Idle 3]]
-            doing sc  `shouldBe` [F]
-            stepsDone sc `shouldBe` [C]
-            nextSteps sc succ pred cp `shouldBe` [A]
-            nextSteps [[Job C 3],[Idle 3],[Idle 3]] succ pred cp `shouldBe` [F,A]
-
-    describe "assign next" $ do
-        let succ = succList small
-            pred = predList small
-            cp = criticalPaths 0 (pred)
-        it "assigns the next steps to the first worker done" $ do
-            let sc = [[Job C 3],[Idle 3],[Idle 3]]
-            assignNext sc succ pred cp  `shouldBe` [[Job C 3,Job F 6],[Idle 3,Job A 1],[Idle 3]]
-            let sc =  [[Job C 3,Job F 6],[Idle 3,Job A 1],[Idle 3]]
-            stepsDone sc `shouldBe` [C]
-            doing sc  `shouldBe` [F,A]
-            nextSteps sc succ pred cp `shouldBe` [A]
-            assignNext sc succ pred cp  `shouldBe` [[Job C 3,Job F 6],[Idle 3,Job A 1],[Idle 3]]
-
-
-
-        it "starts with first steps in case schedule is empty" $ do 
-            assignNext [[],[],[]] succ pred cp  `shouldBe` [[Job C 3],[],[]]
-
-    describe "idle" $ do
-        it "fills the schedule with idle up the first worker done" $ do
-            idle [[],[Job C 3],[]]  `shouldBe`  [[Idle 3],[Job C 3],[Idle 3]]
     describe "schedule" $ do
-        it "schedule the steps for a list of edges" $ do
-            schedule 3 small `shouldBe` []
+        let sc = schedule 3 0 small
+            sc'= schedule 2 1000 tiny
+        it "has a number of todo list" $ do
+            todos sc `shouldBe` [[],[],[]]
 
+        describe "critical paths" $ do
+            it "tells the critical time from any step with a given basis" $ do
+                (sort (M.toList (criticalPaths sc)))
+                    `shouldBe` [(A,10),(B,7),(C,14),(D,9),(E,5),(F,11)]
+                (sort (M.toList (criticalPaths sc'))) 
+                    `shouldBe` [(C,2028),(I,3053),(Q,4070),(S,2044),(Y,1025)]
+      
+        describe "available time" $ do
+            it "tells what is the smaller available time in the schedule" $ do
+                availableTime sc `shouldBe` 0
+
+        describe "assign job" $ do
+            it "assigns a step for the step time in the todo with the smaller available time" $ do
+                let sc1 = assignJob sc A 
+                    sc11 = assignJob sc1 F
+                    sc12 = assignJob sc11 B
+                    sc13 = assignJob sc12 D
+                let sc2 = assignJob sc' C 
+                todos sc1  `shouldBe` [[Job A 1],[],[]]
+
+                todos sc2 `shouldBe` [[Job C 1003],[]]
+                todos sc11 `shouldBe` [[Job A 1],[Job F 6],[]]
+                todos sc12 `shouldBe` [[Job A 1],[Job F 6],[Job B 2]]
+                todos sc13 `shouldBe` [[Job A 1,Job D 4],[Job F 6],[Job B 2]]
+                availableTime sc13 `shouldBe` 2
+            
