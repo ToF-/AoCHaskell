@@ -162,8 +162,13 @@ main = hspec $ do
     describe "schedule" $ do
         let sc = schedule 3 0 small
             sc'= schedule 2 1000 tiny
+            sc1 = assignJob sc A 
+            sc11 = assignJob sc1 F
+            sc12 = assignJob sc11 B
+            sc13 = assignJob sc12 D
+            sc2 = assignJob sc' C 
         it "has a number of todo list" $ do
-            todos sc `shouldBe` [[],[],[]]
+            jobs sc `shouldBe` [[],[],[]]
 
         describe "critical paths" $ do
             it "tells the critical time from any step with a given basis" $ do
@@ -178,16 +183,17 @@ main = hspec $ do
 
         describe "assign job" $ do
             it "assigns a step for the step time in the todo with the smaller available time" $ do
-                let sc1 = assignJob sc A 
-                    sc11 = assignJob sc1 F
-                    sc12 = assignJob sc11 B
-                    sc13 = assignJob sc12 D
-                let sc2 = assignJob sc' C 
-                todos sc1  `shouldBe` [[Job A 1],[],[]]
+                jobs sc1  `shouldBe` [[Job A 1],[],[]]
 
-                todos sc2 `shouldBe` [[Job C 1003],[]]
-                todos sc11 `shouldBe` [[Job A 1],[Job F 6],[]]
-                todos sc12 `shouldBe` [[Job A 1],[Job F 6],[Job B 2]]
-                todos sc13 `shouldBe` [[Job A 1,Job D 4],[Job F 6],[Job B 2]]
+                jobs sc2 `shouldBe` [[Job C 1003],[]]
+                jobs sc11 `shouldBe` [[Job A 1],[Job F 6],[]]
+                jobs sc12 `shouldBe` [[Job A 1],[Job F 6],[Job B 2]]
+                jobs sc13 `shouldBe` [[Job A 1,Job D 4],[Job F 6],[Job B 2]]
                 availableTime sc13 `shouldBe` 2
+
+        describe "fill until step" $ do
+            it "fills the least loaded todo until time of execution of a step is done" $ do
+                jobs (fillUntil A sc)  `shouldBe` [[],[],[]]
+                jobs (fillUntil A sc1)  `shouldBe` [[Job A 1],[Idle 1],[Idle 1]]
+                jobs (fillUntil F sc13)  `shouldBe` [[Job A 1,Job D 4,Idle 1],[Job F 6],[Job B 2,Idle 4]]
             

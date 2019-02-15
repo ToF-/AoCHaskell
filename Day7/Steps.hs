@@ -93,10 +93,11 @@ availableTime :: Schedule -> Time
 availableTime = minimum . L.map workLoad . todos
     
 assignJob :: Schedule -> Step -> Schedule
-assignJob sc s = sc { todos = todos' }
+assignJob sc s = sc { todos = replace i t' ts }
     where
-    i = snd (minimum (zip (L.map workLoad (todos sc)) [0..]))
-    todos' = replace i ((todos sc)!!i ++ [Job s (stepTime s)]) (todos sc)
+    ts = todos sc
+    i = snd (minimum (zip (L.map workLoad ts) [0..]))
+    t' = Job s (stepTime s) : ts !! i
     
     replace i a as = (L.take i as) ++ [a] ++ (L.drop (succ i) as)
 
@@ -104,8 +105,24 @@ assignJob sc s = sc { todos = todos' }
 
 workLoad :: [Job] -> Time
 workLoad = sum . L.map time
-    where
-    time :: Job -> Time 
-    time (Job _ t) = t
-    time (Idle t)  = t
+
+time :: Job -> Time 
+time (Job _ t) = t
+time (Idle t)  = t
     
+fillUntil :: Step -> Schedule -> Schedule
+fillUntil s sc = case findJob s (todos sc) of
+   Nothing -> sc
+   Just time -> sc { todos = fill time (todos sc) }
+
+findJob :: Step -> [Todo] -> Maybe Time
+findJob s [] = Nothing
+findJob s (((Job s' t):js):ts) = if s' == s then Just (t + workLoad js) else findJob s ts
+findJob s (((Idle _):_):ts) = findJob s ts
+findJob s ([]:ts) = findJob s ts
+
+fill :: Time -> [Todo] -> [Todo]
+fill tt = L.map (\j -> if workLoad j < tt then (Idle (tt - workLoad j) : j) else j)
+         
+
+jobs = L.map reverse . todos
