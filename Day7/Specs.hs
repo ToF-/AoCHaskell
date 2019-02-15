@@ -205,6 +205,7 @@ main = hspec $ do
                 M.lookup B (criticalPaths sc'') `shouldBe` Just 468
                 M.lookup V (criticalPaths sc'') `shouldBe` Just 332
                 M.lookup U (criticalPaths sc'') `shouldBe` Just 331
-                
-                jobs (start sc'') `shouldBe` [[Job B 62],[Job E 65],[Job U 81],[Job V 82],[]]
+                let ss = sortBy (flip (comparing (\s -> s `M.lookup` (criticalPaths sc'')))) (startSteps (successors sc''))    
+                ss  `shouldBe` [E,B,V,U]
+                jobs (start sc'') `shouldBe` [[Job E 65],[Job B 62],[Job V 82],[Job U 81],[]]
             
