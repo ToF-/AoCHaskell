@@ -116,5 +116,7 @@ main = hspec $ do
 
         it "can assign a step to the first worker that is ready" $ do
             let sch' = assignStep C sch
+            let sch''= assignStep F sch'
             workers sch' `shouldBe` [[Job C 3],[],[]]
+            workers sch'' `shouldBe` [[Job C 3],[Job F 6],[]]
             

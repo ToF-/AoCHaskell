@@ -121,10 +121,11 @@ stepsInProgress :: Schedule -> [Step]
 stepsInProgress sch = []
 
 assignStep :: Step -> Schedule -> Schedule
-assignStep step sch = sch { workers = replace 0 ((job step):) (workers sch) }
+assignStep step sch = sch { workers = replace ixMin ((job step):) (workers sch) }
     where
     job step = Job step ((baseDuration sch) + 1 + fromEnum step)
-    replace :: Int -> ([a] -> [a]) -> [[a]] -> [[a]]
-    replace _ f [] = []
-    replace 0 f (a:as) = f a : as 
-    replace n f (a:as) = a : replace (pred n) f as
+    ixMin = snd $ minimum $ zip (L.map time (workers sch)) [0..]
+replace :: Int -> ([a] -> [a]) -> [[a]] -> [[a]]
+replace _ f [] = []
+replace 0 f (a:as) = f a : as 
+replace n f (a:as) = a : replace (pred n) f as
