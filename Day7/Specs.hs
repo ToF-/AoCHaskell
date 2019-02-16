@@ -115,3 +115,11 @@ main = hspec $ do
         describe "done" $ do
             it "tells if the last step has been done in the schedule" $ do
                 done scSmall `shouldBe` False
+                let final = L.foldl assignStep scSmall [C,F,A,B,E,E]
+                done final `shouldBe` True
+
+        describe "next step" $ do
+            describe "assign the next step in a schedule" $ do
+                it "starting from the first starter step" $ do
+                    jobs (nextStep (start scSmall)) `shouldBe` [[Job C 3],[],[]]
+                    

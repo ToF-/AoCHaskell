@@ -139,3 +139,9 @@ done :: Schedule -> Bool
 done sc = case findJob (lastStep sc) (todos sc) of
     Nothing -> False
     Just _ -> True
+
+nextStep :: Schedule -> Schedule
+nextStep sc = assignStep sc' s
+    where
+    (s:ss) = nextSteps sc
+    sc' = sc { nextSteps = ss }
