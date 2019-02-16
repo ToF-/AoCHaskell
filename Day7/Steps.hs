@@ -4,7 +4,7 @@ import Data.Map as M
 import Data.List as L
 import Data.Maybe
 
-data Step = A | B | C | D | E | F | G | H | I | J | K | L | M 
+data Step = Start | A | B | C | D | E | F | G | H | I | J | K | L | M 
           | N | O | P | Q | R | S | T | U | V | W | X | Y | Z 
     deriving (Eq, Ord, Show, Enum)
 
@@ -64,6 +64,7 @@ type Time = Int
 data Job = Job Step Time | Idle Time
     deriving (Eq, Show)
 type Worker = [Job]
+type StepTime = (Step,Time)
 
 step :: Job -> Maybe Step
 step (Job s _) = Just s
@@ -73,19 +74,16 @@ duration :: Job -> Time
 duration (Job _ t) = t
 duration (Idle t)  = t
 
-time :: Worker -> Time
-time = sum . L.map duration
+timeWorked :: Worker -> Time
+timeWorked = sum . L.map duration
 
-stepsDone :: Worker -> [Step]
-stepsDone = catMaybes . L.map step
-
-stepsDoneAt :: Time -> Worker -> [Step]
-stepsDoneAt t [] = []
-stepsDoneAt t w | t >= time w = stepsDone w
-stepsDoneAt t ((Job s d):js) = stepsDoneAt t js
+stepsDone :: Worker -> [StepTime]
+stepsDone [] = []
+stepsDone ((Job s t):js) = (s,t + timeWorked js) : stepsDone js
+stepsDone ((Idle t):js) = stepsDone js
 
 wait :: Time -> Worker -> Worker
-wait t w | t > time w = Idle (t - time w) : w
+wait t w | t > timeWorked w = Idle (t - timeWorked w) : w
 wait t w = w
 
 type TimeList = Map Step Time
@@ -99,7 +97,7 @@ criticalPathTimeList base sl = cptl 0 M.empty (endStep sl)
         Nothing -> tl'
         Just preds -> L.foldl (cptl t') tl' preds
         where
-        t' = t + base + (fromEnum step) + 1
+        t' = t + base + (fromEnum step) 
         tl' = M.insertWith max step t' tl
  
 data Schedule = Schedule {
@@ -120,12 +118,47 @@ schedule n base edges = Schedule (replicate n []) base succs preds cptl
 stepsInProgress :: Schedule -> [Step]
 stepsInProgress sch = []
 
-assignStep :: Step -> Schedule -> Schedule
-assignStep step sch = sch { workers = replace ixMin ((job step):) (workers sch) }
+assignStep :: StepTime -> Schedule -> Schedule
+assignStep (step,time) sch = sch { workers = replace ixMin ((job step):) (workers sch) }
     where
-    job step = Job step ((baseDuration sch) + 1 + fromEnum step)
-    ixMin = snd $ minimum $ zip (L.map time (workers sch)) [0..]
+    job step = Job step ((baseDuration sch) + fromEnum step)
+    ixMin = snd $ minimum $ zip (L.map timeWorked (workers sch)) [0..]
+
 replace :: Int -> ([a] -> [a]) -> [[a]] -> [[a]]
 replace _ f [] = []
 replace 0 f (a:as) = f a : as 
 replace n f (a:as) = a : replace (pred n) f as
+
+nextSteps :: Schedule -> [StepTime]
+nextSteps sch = sortBy descCriticalTime steps
+    where
+    steps = if initial then starts else L.concatMap succsTo stepTimesDone
+
+    starts = L.map (\step -> (step,0)) $ startSteps succs
+    succs = successors sch
+    preds = predecessors sch
+    stepTimesDone :: [StepTime]
+    stepTimesDone = concatMap stepsDone (workers sch)
+    done :: [Step]
+    done = L.map fst stepTimesDone
+    initial = L.null stepTimesDone
+    
+    succsTo :: StepTime -> [StepTime]
+    succsTo (step,time) = case step `M.lookup` succs of
+        Nothing -> []
+        Just steps -> L.map (\step -> (step,time)) $ L.filter allPredsDone $ L.filter (not.(`elem` done)) steps
+
+    allPredsDone step = case step `M.lookup` preds of
+        Nothing -> True
+        Just steps -> all (`elem` done) steps
+
+    descCriticalTime s t = case flip compare ((fst s) `M.lookup` cl) ((fst t) `M.lookup` cl) of
+        EQ -> compare s t
+        ord -> ord
+        where
+        cl = criticalPath sch
+
+assignNext :: Schedule -> Schedule 
+assignNext sch = case nextSteps sch of
+    [] -> sch
+    (step:steps) -> assignStep step sch

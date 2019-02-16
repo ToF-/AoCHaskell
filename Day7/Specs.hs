@@ -1,6 +1,7 @@
 import Test.Hspec
 import Steps
 import Data.Map as M
+import Data.List as L
 
 small = [(C,A) ,(C,F) ,(A,B) ,(A,D) ,(B,E) ,(D,E) ,(F,E)]
 
@@ -73,19 +74,12 @@ main = hspec $ do
 
     describe "a worker" $ do
         it "has jobs (steps or idle) thus a time" $ do
-            time []  `shouldBe` 0
-            time [Job A 42,Idle 17] `shouldBe` 59
+            timeWorked []  `shouldBe` 0
+            timeWorked [Job A 42,Idle 17] `shouldBe` 59
 
         it "has steps done" $ do
             stepsDone [] `shouldBe` []
-            stepsDone [Job F 6,Job C 3] `shouldBe`  [F,C]
-
-        it "has steps done at a given time" $ do
-            stepsDoneAt 0 [] `shouldBe` []
-            stepsDoneAt 1 [Job F 6,Job C 3] `shouldBe`  []
-            stepsDoneAt 3 [Job F 6,Job C 3] `shouldBe`  [C]
-            stepsDoneAt 7 [Job F 6,Job C 3] `shouldBe`  [C]
-            stepsDoneAt 9 [Job F 6,Job C 3] `shouldBe`  [F,C]
+            stepsDone [Job F 6,Job C 3] `shouldBe`  [(F,9),(C,3)]
 
         it "can be asked to wait until a given time" $ do
             wait 42 [] `shouldBe` [Idle 42]
@@ -103,20 +97,39 @@ main = hspec $ do
                 ,(S,164),(T,763),(U,825),(V,848),(W,766),(X,465),(Y,85),(Z,396)]
 
     describe "a schedule" $ do
-        let sch = schedule 3 0 small 
+        let schSmall = schedule 2 0 small 
+            schLarge = schedule 5 60 large
+            
         it "is created with a number of workers, a base duration, and a list of edges" $ do
-            baseDuration sch `shouldBe` 0
-            workers sch `shouldBe` [[],[],[]]
-            successors sch  `shouldBe` succList small
-            predecessors sch `shouldBe` predList (successors sch)
-            criticalPath sch `shouldBe` criticalPathTimeList 0 (successors sch)
+            baseDuration schSmall `shouldBe` 0
+            workers schSmall `shouldBe` [[],[]]
+            successors schSmall  `shouldBe` succList small
+            predecessors schSmall `shouldBe` predList (successors schSmall)
+            criticalPath schSmall `shouldBe` criticalPathTimeList 0 (successors schSmall)
 
         it "can have steps in progress" $ do
-            stepsInProgress sch  `shouldBe` []
+            stepsInProgress schSmall  `shouldBe` []
 
         it "can assign a step to the first worker that is ready" $ do
-            let sch' = assignStep C sch
-            let sch''= assignStep F sch'
-            workers sch' `shouldBe` [[Job C 3],[],[]]
-            workers sch'' `shouldBe` [[Job C 3],[Job F 6],[]]
+            let schSmall' = assignStep (C,0) schSmall
+            workers schSmall' `shouldBe` [[Job C 3],[]]
+            let schSmall''= assignStep (F,3) schSmall'
+            workers schSmall'' `shouldBe` [[Job C 3],[Job F 6]]
+
+        describe "nextSteps" $ do
+            describe "tells the next Step that can be executed given the current schedule" $ do
+                it "at the start, tells the first steps" $ do
+                    nextSteps schSmall `shouldBe` [(C,0)]
+                it "tells the step in order of descending critical path time" $ do
+                    L.map fst (nextSteps schLarge) `shouldBe` [V,B,U,E]
+                it "tells the step for which all predecessors are done" $ do
+                    let schSmall' = schSmall { workers = [[Job C 3],[]] }
+                    nextSteps schSmall' `shouldBe` [(F,3),(A,3)] 
+                    let schSmall'' = schSmall { workers = [[Job C 3],[Job F 6,Idle 3]] }
+                    L.concatMap stepsDone (workers schSmall'')  `shouldBe` [(C,3),(F,9)]
+                    nextSteps schSmall'' `shouldBe` [(A,3)]
+        describe "assignNext" $ do
+            describe "assign the next step to be done" $ do
+                it "on the worker with the minimum time" $ do
+                    workers (assignNext schSmall)  `shouldBe` [[Job C 3],[]]
             
