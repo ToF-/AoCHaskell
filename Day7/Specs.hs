@@ -77,9 +77,9 @@ main = hspec $ do
             timeWorked []  `shouldBe` 0
             timeWorked [Job A 42,Idle 17] `shouldBe` 59
 
-        it "has steps done" $ do
+        it "has steps done at the total worked time" $ do
             stepsDone [] `shouldBe` []
-            stepsDone [Job F 6,Job C 3] `shouldBe`  [(F,9),(C,3)]
+            stepsDone [Job F 6,Job C 3] `shouldBe`  [(F,9),(C,9)]
 
         it "can be asked to wait until a given time" $ do
             wait 42 [] `shouldBe` [Idle 42]
@@ -99,7 +99,9 @@ main = hspec $ do
     describe "a schedule" $ do
         let schSmall = schedule 2 0 small 
             schLarge = schedule 5 60 large
-            
+            schSmall' = assignStep (C,0) schSmall
+            schSmall''= assignStep (F,3) schSmall'
+
         it "is created with a number of workers, a base duration, and a list of edges" $ do
             baseDuration schSmall `shouldBe` 0
             workers schSmall `shouldBe` [[],[]]
@@ -111,15 +113,17 @@ main = hspec $ do
             stepsInProgress schSmall  `shouldBe` []
 
         it "can assign a step to the first worker that is ready" $ do
-            let schSmall' = assignStep (C,0) schSmall
+            workers schSmall'' `shouldBe` [[Job C 3],[Job F 6,Idle 3]]
             workers schSmall' `shouldBe` [[Job C 3],[]]
-            let schSmall''= assignStep (F,3) schSmall'
-            workers schSmall'' `shouldBe` [[Job C 3],[Job F 6]]
+
+        it "can tell all its steps that are done" $ do
+            allStepsDone schSmall''  `shouldBe` [(C,3),(F,9)]
 
         describe "nextSteps" $ do
             describe "tells the next Step that can be executed given the current schedule" $ do
                 it "at the start, tells the first steps" $ do
                     nextSteps schSmall `shouldBe` [(C,0)]
+                    nextSteps schLarge  `shouldBe` [(V,0),(B,0),(U,0),(E,0)]
                 it "tells the step in order of descending critical path time" $ do
                     L.map fst (nextSteps schLarge) `shouldBe` [V,B,U,E]
                 it "tells the step for which all predecessors are done" $ do
@@ -128,8 +132,35 @@ main = hspec $ do
                     let schSmall'' = schSmall { workers = [[Job C 3],[Job F 6,Idle 3]] }
                     L.concatMap stepsDone (workers schSmall'')  `shouldBe` [(C,3),(F,9)]
                     nextSteps schSmall'' `shouldBe` [(A,3)]
+                it "tells the time that the step was done" $ do
+                    let schB = schSmall { workers = [[Job D 4,Job A 1,Job C 3],[Job F 6,Idle 3]] }
+                    allStepsDone schB `shouldBe` [(D,8),(A,8),(C,8),(F,9)]
+                    nextSteps schB `shouldBe` [(B,8)]
+                it "tells the maximum time that the next step has to be done" $ do
+                    let schE = schSmall { workers = [[Job B 2,Job D 4,Job A 1,Job C 3],[Job F 6,Idle 3]] }
+                    allStepsDone schE `shouldBe` [(B,10),(D,10),(A,10),(C,10),(F,9)]
+                    nextSteps schE `shouldBe` [(E,10)]
+                it "doesn't eliminate previous successors that were already in the next steps" $ do
+                    nextSteps schLarge  `shouldBe` [(V,0),(B,0),(U,0),(E,0)]
+                    nextSteps (assignNext schLarge)  `shouldBe` [(B,0),(U,0),(W,82),(E,0)]
         describe "assignNext" $ do
             describe "assign the next step to be done" $ do
                 it "on the worker with the minimum time" $ do
                     workers (assignNext schSmall)  `shouldBe` [[Job C 3],[]]
-            
+                it "making wait the worker if need be" $ do
+                    workers (assignNext (assignNext schSmall)) `shouldBe` [[Job C 3],[Job F 6,Idle 3]]
+
+                    let schE = schSmall { workers = [[Job B 2,Job D 4,Job A 1,Job C 3],[Job F 6,Idle 3]] }
+                    nextSteps schE `shouldBe` [(E,10)]
+                    workers (assignNext schE) `shouldBe` 
+                        [[Job B 2,Job D 4,Job A 1,Job C 3],[Job E 5,Idle 1,Job F 6,Idle 3]]
+        describe "run" $ do
+            it "assign each step until all is done" $ do
+                workers (run schSmall) `shouldBe` 
+                 [[Job B 2,Job D 4,Job A 1,Job C 3],[Job E 5,Idle 1,Job F 6,Idle 3]]
+
+        describe "maxTime" $ do
+            it "tells the maximum worked time for the given list of edges a number of workers and a base duration" $ do
+                maxTime small 2 0 `shouldBe` 15
+                maxTime large 5 60 `shouldBe` 1422
+        

@@ -78,9 +78,11 @@ timeWorked :: Worker -> Time
 timeWorked = sum . L.map duration
 
 stepsDone :: Worker -> [StepTime]
-stepsDone [] = []
-stepsDone ((Job s t):js) = (s,t + timeWorked js) : stepsDone js
-stepsDone ((Idle t):js) = stepsDone js
+stepsDone js = L.map (\step -> (step,timeWorked js)) (steps js)
+    where
+    steps [] = []
+    steps ((Job s _):js) = s:steps js
+    steps ((Idle _) :js) = steps js
 
 wait :: Time -> Worker -> Worker
 wait t w | t > timeWorked w = Idle (t - timeWorked w) : w
@@ -105,11 +107,12 @@ data Schedule = Schedule {
         baseDuration :: Time,
         successors :: SuccList,
         predecessors :: PredList,
-        criticalPath :: TimeList }
+        criticalPath :: TimeList,
+        remaining :: [StepTime] }
     deriving (Eq, Show)
 
 schedule :: Int -> Time -> [Edge] -> Schedule
-schedule n base edges = Schedule (replicate n []) base succs preds cptl
+schedule n base edges = Schedule (replicate n []) base succs preds cptl []
     where
     succs = succList edges
     preds = predList (succList edges)
@@ -119,8 +122,9 @@ stepsInProgress :: Schedule -> [Step]
 stepsInProgress sch = []
 
 assignStep :: StepTime -> Schedule -> Schedule
-assignStep (step,time) sch = sch { workers = replace ixMin ((job step):) (workers sch) }
+assignStep (step,time) sch = sch { workers = replace ixMin (addJob (step,time)) (workers sch) }
     where
+    addJob (step,time) jobs = job step : wait time jobs
     job step = Job step ((baseDuration sch) + fromEnum step)
     ixMin = snd $ minimum $ zip (L.map timeWorked (workers sch)) [0..]
 
@@ -129,19 +133,31 @@ replace _ f [] = []
 replace 0 f (a:as) = f a : as 
 replace n f (a:as) = a : replace (pred n) f as
 
+allStepsDone :: Schedule -> [StepTime]
+allStepsDone = concatMap stepsDone . workers
+
 nextSteps :: Schedule -> [StepTime]
-nextSteps sch = sortBy descCriticalTime steps
+nextSteps sch = atMaxTime $ sortBy descCriticalTime steps
     where
-    steps = if initial then starts else L.concatMap succsTo stepTimesDone
+    atMaxTime [] = []
+    atMaxTime ((step,time):steps) = case step `L.lookup` steps of
+         Nothing -> (step,time):atMaxTime steps
+         Just otherTime -> case otherTime > time of
+            True -> atMaxTime steps
+            False -> (step,time) : atMaxTime (remove (step,otherTime) steps)
+                where
+                remove a [] = []
+                remove a (b:as) | a == b = as
+                                | otherwise = b : remove a as
+
+    steps = if initial then starts else (remaining sch ) ++ L.concatMap succsTo (allStepsDone sch)
 
     starts = L.map (\step -> (step,0)) $ startSteps succs
     succs = successors sch
     preds = predecessors sch
-    stepTimesDone :: [StepTime]
-    stepTimesDone = concatMap stepsDone (workers sch)
     done :: [Step]
-    done = L.map fst stepTimesDone
-    initial = L.null stepTimesDone
+    done = L.map fst (allStepsDone sch)
+    initial = L.null (allStepsDone sch)
     
     succsTo :: StepTime -> [StepTime]
     succsTo (step,time) = case step `M.lookup` succs of
@@ -161,4 +177,11 @@ nextSteps sch = sortBy descCriticalTime steps
 assignNext :: Schedule -> Schedule 
 assignNext sch = case nextSteps sch of
     [] -> sch
-    (step:steps) -> assignStep step sch
+    (step:steps) -> assignStep step $ sch { remaining = steps }
+
+run :: Schedule -> Schedule 
+run sch | L.null (nextSteps sch) = sch
+        | otherwise              = run $ assignNext sch
+
+maxTime :: [Edge] -> Int -> Time -> Time
+maxTime edges n base = maximum $ L.map timeWorked $ workers $ run $ schedule n base edges
