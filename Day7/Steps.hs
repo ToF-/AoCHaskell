@@ -127,7 +127,10 @@ start :: Schedule -> Schedule
 start sc = sc { nextSteps = firstSteps }
     where
     firstSteps :: [Step]
-    firstSteps = sortBy (flip (comparing (\s -> s `M.lookup` (criticalPathTime sc)))) (startSteps (successors sc))
+    firstSteps = sortBy (descendingCriticalPathTime sc) (startSteps (successors sc))
+
+descendingCriticalPathTime :: Schedule -> Step -> Step -> Ordering
+descendingCriticalPathTime sc = flip (comparing (`M.lookup` (criticalPathTime sc)))
 
 jobs = L.map reverse . todos
 
@@ -140,8 +143,37 @@ done sc = case findJob (lastStep sc) (todos sc) of
     Nothing -> False
     Just _ -> True
 
-nextStep :: Schedule -> Schedule
-nextStep sc = assignStep sc' s
+next :: Schedule -> Schedule
+next sc = case (nextSteps sc) of 
+    (s:ss) -> assignStep (sc { nextSteps = ss}) s
+    [] -> case done sc of
+        True -> sc 
+        False -> assignNextStep sc
+
+stepsDoneAt :: Time -> Schedule -> [Step]
+stepsDoneAt t sc = L.concatMap (stepsDoneAtFor t) (todos sc)
     where
-    (s:ss) = nextSteps sc
-    sc' = sc { nextSteps = ss }
+    stepsDoneAtFor t todo | workLoad todo <= t = catMaybes (L.map step todo)
+                          | otherwise         = []
+
+step :: Job -> Maybe Step
+step (Job s _) = Just s
+step _ = Nothing
+
+smallestWorkLoad :: Schedule -> Time
+smallestWorkLoad sc = minimum ((L.map workLoad) (todos sc))
+
+assignNextStep :: Schedule -> Schedule
+assignNextStep sc = sc { nextSteps = nextSteps' }
+    where
+    t = smallestWorkLoad sc
+    stepsDone = stepsDoneAt t sc
+    succsWithPredsDone sc = L.foldl addStepIfPrecIsDone [] stepsDone
+    nextSteps' = case succsWithPredsDone sc of
+        [] -> nextSteps $ assignNextStep ((L.foldl (\sch s -> idleUntil s sch) sc stepsDone))
+        ss -> ss
+
+    addStepIfPrecIsDone :: [Step] -> Step -> [Step]
+    addStepIfPrecIsDone acc s = case fmap (L.filter (`elem` stepsDone)) (M.lookup s (successors sc)) of
+        Nothing -> acc
+        Just ss -> acc ++ ss

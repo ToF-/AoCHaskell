@@ -118,8 +118,21 @@ main = hspec $ do
                 let final = L.foldl assignStep scSmall [C,F,A,B,E,E]
                 done final `shouldBe` True
 
-        describe "next step" $ do
+        describe "smallest workload" $ do
+            it "tells the total time worked on the smallest todo" $ do
+                smallestWorkLoad scSmall `shouldBe` 0
+                smallestWorkLoad (next (start scSmall)) `shouldBe` 0
+        
+        describe "steps done" $ do
+            it "tells what steps are done at a given time" $ do
+                stepsDoneAt 0 scSmall  `shouldBe` []
+                stepsDoneAt 0 (next (start scSmall))  `shouldBe` []
+                stepsDoneAt 3 (next (start scSmall))  `shouldBe` [C]
+
+        describe "next" $ do
             describe "assign the next step in a schedule" $ do
                 it "starting from the first starter step" $ do
-                    jobs (nextStep (start scSmall)) `shouldBe` [[Job C 3],[],[]]
-                    
+                    jobs (next (start scSmall)) `shouldBe` [[Job C 3],[],[]]
+                it "if a next step requires a step to be done, advance time with Idle" $ do
+                    nextSteps (next (start scSmall))  `shouldBe` [C]
+                    jobs (next (next (start scSmall))) `shouldBe` [[Job C 3,Job F 6],[Idle 3],[Idle 3]]
