@@ -34,18 +34,18 @@ large=
 
 
 main = hspec $ do
-    describe "a pred list" $ do
-        it "tells what are the predecessors of a step" $ do
-            let pl = predList small
-            E `M.lookup` pl `shouldBe` Just [B,D,F]
-            C `M.lookup` pl `shouldBe` Nothing
-
     describe "a succ list" $ do
         it "tells what are the successors of a step" $ do
             let sl = succList small
             C `M.lookup` sl `shouldBe` Just [A,F]
             E `M.lookup` sl `shouldBe` Nothing
             True `shouldBe` True 
+
+    describe "a pred list" $ do
+        it "tells what are the predecessors of a step from a succ list" $ do
+            let pl = predList (succList small)
+            E `M.lookup` pl `shouldBe` Just [B,D,F]
+            C `M.lookup` pl `shouldBe` Nothing
 
     describe "start steps" $ do
         it "tells what are the starting steps of the list" $ do
@@ -54,3 +54,8 @@ main = hspec $ do
     describe "end step" $ do
         it "tells what is the ending step of the list" $ do
             endStep (succList small)  `shouldBe` E
+
+    describe "execute" $ do
+        it "tells which steps to execute given a successor list" $ do
+            (execute (succList small))  `shouldBe` [C,A,B,D,F,E]
+            concatMap show (execute (succList large))  `shouldBe` "BETUFNVADWGPLRJOHMXKZQCISY"
