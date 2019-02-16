@@ -91,3 +91,13 @@ main = hspec $ do
             wait 42 [] `shouldBe` [Idle 42]
             wait 9 [Job C 3] `shouldBe` [Idle 6, Job C 3]
             wait 4  [Idle 17] `shouldBe` [Idle 17]
+
+    describe "a critical path time list" $ do
+        it "tells the critical path time from any step given a successor list and a base duration" $ do
+            let cpl = criticalPathTimeList 0 (succList small) 
+            M.toList cpl  `shouldBe` [(A,1+4+5),(B,2+5),(C,3+6+5),(D,4+5),(E,5),(F,6+5)]
+            let cpl = criticalPathTimeList 60 (succList large) 
+            M.toList cpl  `shouldBe` 
+                [(A,744),(B,825),(C,148),(D,608),(E,673),(F,610),(G,532),(H,378),(I,233)
+                ,(J,535),(K,381),(L,607),(M,469),(N,606),(O,544),(P,683),(Q,310),(R,622)
+                ,(S,164),(T,763),(U,825),(V,848),(W,766),(X,465),(Y,85),(Z,396)]

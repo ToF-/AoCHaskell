@@ -87,3 +87,18 @@ stepsDoneAt t ((Job s d):js) = stepsDoneAt t js
 wait :: Time -> Worker -> Worker
 wait t w | t > time w = Idle (t - time w) : w
 wait t w = w
+
+type TimeList = Map Step Time
+
+criticalPathTimeList :: Time -> SuccList -> TimeList
+criticalPathTimeList base sl = cptl 0 M.empty (endStep sl) 
+    where
+    preds = predList sl
+    cptl :: Time -> TimeList -> Step -> TimeList
+    cptl t tl step = case step `M.lookup` preds of
+        Nothing -> tl'
+        Just preds -> L.foldl (cptl t') tl' preds
+        where
+        t' = t + base + (fromEnum step) + 1
+        tl' = M.insertWith max step t' tl
+ 
