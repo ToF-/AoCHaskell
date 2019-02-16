@@ -102,3 +102,29 @@ criticalPathTimeList base sl = cptl 0 M.empty (endStep sl)
         t' = t + base + (fromEnum step) + 1
         tl' = M.insertWith max step t' tl
  
+data Schedule = Schedule {
+        workers :: [Worker],
+        baseDuration :: Time,
+        successors :: SuccList,
+        predecessors :: PredList,
+        criticalPath :: TimeList }
+    deriving (Eq, Show)
+
+schedule :: Int -> Time -> [Edge] -> Schedule
+schedule n base edges = Schedule (replicate n []) base succs preds cptl
+    where
+    succs = succList edges
+    preds = predList (succList edges)
+    cptl  = criticalPathTimeList base succs
+
+stepsInProgress :: Schedule -> [Step]
+stepsInProgress sch = []
+
+assignStep :: Step -> Schedule -> Schedule
+assignStep step sch = sch { workers = replace 0 ((job step):) (workers sch) }
+    where
+    job step = Job step ((baseDuration sch) + 1 + fromEnum step)
+    replace :: Int -> ([a] -> [a]) -> [[a]] -> [[a]]
+    replace _ f [] = []
+    replace 0 f (a:as) = f a : as 
+    replace n f (a:as) = a : replace (pred n) f as

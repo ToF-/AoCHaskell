@@ -101,3 +101,20 @@ main = hspec $ do
                 [(A,744),(B,825),(C,148),(D,608),(E,673),(F,610),(G,532),(H,378),(I,233)
                 ,(J,535),(K,381),(L,607),(M,469),(N,606),(O,544),(P,683),(Q,310),(R,622)
                 ,(S,164),(T,763),(U,825),(V,848),(W,766),(X,465),(Y,85),(Z,396)]
+
+    describe "a schedule" $ do
+        let sch = schedule 3 0 small 
+        it "is created with a number of workers, a base duration, and a list of edges" $ do
+            baseDuration sch `shouldBe` 0
+            workers sch `shouldBe` [[],[],[]]
+            successors sch  `shouldBe` succList small
+            predecessors sch `shouldBe` predList (successors sch)
+            criticalPath sch `shouldBe` criticalPathTimeList 0 (successors sch)
+
+        it "can have steps in progress" $ do
+            stepsInProgress sch  `shouldBe` []
+
+        it "can assign a step to the first worker that is ready" $ do
+            let sch' = assignStep C sch
+            workers sch' `shouldBe` [[Job C 3],[],[]]
+            
