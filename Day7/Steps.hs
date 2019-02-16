@@ -26,7 +26,7 @@ data Schedule = Schedule {
     predecessors :: StepList,
     criticalPathTime :: CriticalTime,
     nextSteps :: [Step]
-} 
+} deriving (Eq, Show)
 
 predList :: [Edge] -> StepList 
 predList = L.foldl addPreds M.empty 
@@ -130,3 +130,12 @@ start sc = sc { nextSteps = firstSteps }
     firstSteps = sortBy (flip (comparing (\s -> s `M.lookup` (criticalPathTime sc)))) (startSteps (successors sc))
 
 jobs = L.map reverse . todos
+
+lastStep :: Schedule -> Step
+lastStep sc = head (L.filter ((Nothing==).(`M.lookup` succs)) (concat (M.elems succs)))
+    where succs = successors sc
+
+done :: Schedule -> Bool
+done sc = case findJob (lastStep sc) (todos sc) of
+    Nothing -> False
+    Just _ -> True

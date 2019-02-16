@@ -106,3 +106,12 @@ main = hspec $ do
                 catMaybes (L.map (`M.lookup` criticalPathTime scLarge) [E,B,V,U]) `shouldBe` [527,468,332,331]
                 nextSteps (start scLarge)  `shouldBe` [E,B,V,U]
             
+        describe "last step" $ do
+            it "tells the last step in the schedule" $ do
+                lastStep scSmall `shouldBe` E
+                lastStep scTiny  `shouldBe` Y
+                lastStep scLarge  `shouldBe` Y
+
+        describe "done" $ do
+            it "tells if the last step has been done in the schedule" $ do
+                done scSmall `shouldBe` False
