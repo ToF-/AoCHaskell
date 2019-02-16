@@ -162,5 +162,5 @@ main = hspec $ do
         describe "maxTime" $ do
             it "tells the maximum worked time for the given list of edges a number of workers and a base duration" $ do
                 maxTime small 2 0 `shouldBe` 15
-                maxTime large 5 60 `shouldBe` 1422
+                maxTime large 5 60 `shouldBe` 1422 -- wrong
         
