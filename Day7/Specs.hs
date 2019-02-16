@@ -41,21 +41,53 @@ main = hspec $ do
             E `M.lookup` sl `shouldBe` Nothing
             True `shouldBe` True 
 
-    describe "a pred list" $ do
-        it "tells what are the predecessors of a step from a succ list" $ do
-            let pl = predList (succList small)
-            E `M.lookup` pl `shouldBe` Just [B,D,F]
-            C `M.lookup` pl `shouldBe` Nothing
+        describe "a pred list" $ do
+            it "tells what are the predecessors of a step from a succ list" $ do
+                let pl = predList (succList small)
+                E `M.lookup` pl `shouldBe` Just [B,D,F]
+                C `M.lookup` pl `shouldBe` Nothing
 
-    describe "start steps" $ do
-        it "tells what are the starting steps of the list" $ do
-            startSteps (succList small) `shouldBe` [C]
+        describe "start steps" $ do
+            it "tells what are the starting steps of the list" $ do
+                startSteps (succList small) `shouldBe` [C]
 
-    describe "end step" $ do
-        it "tells what is the ending step of the list" $ do
-            endStep (succList small)  `shouldBe` E
+        describe "end step" $ do
+            it "tells what is the ending step of the list" $ do
+                endStep (succList small)  `shouldBe` E
 
-    describe "execute" $ do
-        it "tells which steps to execute given a successor list" $ do
-            (execute (succList small))  `shouldBe` [C,A,B,D,F,E]
-            concatMap show (execute (succList large))  `shouldBe` "BETUFNVADWGPLRJOHMXKZQCISY"
+        describe "execute" $ do
+            it "tells which steps to execute given a successor list" $ do
+                (execute (succList small))  `shouldBe` [C,A,B,D,F,E]
+                concatMap show (execute (succList large))  `shouldBe` "BETUFNVADWGPLRJOHMXKZQCISY"
+
+    describe "a job" $ do
+        it "can be a working step for a given time" $ do
+            step (Job A 42) `shouldBe` Just A
+
+        it "can be Idle for a given time, then it's not a step" $ do
+            step (Idle 17) `shouldBe` Nothing
+
+        it "has a duration" $ do
+            duration (Job A 42) `shouldBe` 42
+            duration (Idle 17)  `shouldBe` 17
+
+    describe "a worker" $ do
+        it "has jobs (steps or idle) thus a time" $ do
+            time []  `shouldBe` 0
+            time [Job A 42,Idle 17] `shouldBe` 59
+
+        it "has steps done" $ do
+            stepsDone [] `shouldBe` []
+            stepsDone [Job F 6,Job C 3] `shouldBe`  [F,C]
+
+        it "has steps done at a given time" $ do
+            stepsDoneAt 0 [] `shouldBe` []
+            stepsDoneAt 1 [Job F 6,Job C 3] `shouldBe`  []
+            stepsDoneAt 3 [Job F 6,Job C 3] `shouldBe`  [C]
+            stepsDoneAt 7 [Job F 6,Job C 3] `shouldBe`  [C]
+            stepsDoneAt 9 [Job F 6,Job C 3] `shouldBe`  [F,C]
+
+        it "can be asked to wait until a given time" $ do
+            wait 42 [] `shouldBe` [Idle 42]
+            wait 9 [Job C 3] `shouldBe` [Idle 6, Job C 3]
+            wait 4  [Idle 17] `shouldBe` [Idle 17]

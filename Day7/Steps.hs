@@ -2,6 +2,7 @@ module Steps
 where
 import Data.Map as M
 import Data.List as L
+import Data.Maybe
 
 data Step = A | B | C | D | E | F | G | H | I | J | K | L | M 
           | N | O | P | Q | R | S | T | U | V | W | X | Y | Z 
@@ -58,3 +59,31 @@ execute sl = snd $ fmap reverse $ execute' (startSteps sl,[])
         allPredExecuted s = case s `M.lookup` pl of
             Nothing -> True
             Just ss -> all (`elem` done) ss
+
+type Time = Int
+data Job = Job Step Time | Idle Time
+    deriving (Eq, Show)
+type Worker = [Job]
+
+step :: Job -> Maybe Step
+step (Job s _) = Just s
+step (Idle _) = Nothing
+
+duration :: Job -> Time
+duration (Job _ t) = t
+duration (Idle t)  = t
+
+time :: Worker -> Time
+time = sum . L.map duration
+
+stepsDone :: Worker -> [Step]
+stepsDone = catMaybes . L.map step
+
+stepsDoneAt :: Time -> Worker -> [Step]
+stepsDoneAt t [] = []
+stepsDoneAt t w | t >= time w = stepsDone w
+stepsDoneAt t ((Job s d):js) = stepsDoneAt t js
+
+wait :: Time -> Worker -> Worker
+wait t w | t > time w = Idle (t - time w) : w
+wait t w = w
