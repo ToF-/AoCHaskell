@@ -9,9 +9,16 @@ data Step = A | B | C | D | E | F | G | H | I | J | K | L | M
 
 type Edge = (Step, Step)
 type PredList = Map Step [Step]
+type SuccList = Map Step [Step]
 
 predList :: [Edge] -> PredList
 predList = L.foldl addEdge M.empty
     where
     addEdge :: PredList -> Edge -> PredList
     addEdge pl (pred,succ) = M.insertWith (\l' l -> (L.nub . L.sort) (l ++ l')) succ [pred] pl
+
+succList :: [Edge] -> SuccList
+succList = L.foldl addEdge M.empty
+    where
+    addEdge :: SuccList -> Edge -> SuccList
+    addEdge pl (pred,succ) = M.insertWith (\l' l -> (L.nub . L.sort) (l ++ l')) pred [succ] pl

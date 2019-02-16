@@ -38,3 +38,11 @@ main = hspec $ do
         it "tells what are the predecessors of a step" $ do
             let pl = predList small
             E `M.lookup` pl `shouldBe` Just [B,D,F]
+            C `M.lookup` pl `shouldBe` Nothing
+
+    describe "a succ list" $ do
+        it "tells what are the successors of a step" $ do
+            let sl = succList small
+            C `M.lookup` sl `shouldBe` Just [A,F]
+            E `M.lookup` sl `shouldBe` Nothing
+            True `shouldBe` True 
