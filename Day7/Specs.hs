@@ -46,3 +46,11 @@ main = hspec $ do
             C `M.lookup` sl `shouldBe` Just [A,F]
             E `M.lookup` sl `shouldBe` Nothing
             True `shouldBe` True 
+
+    describe "start steps" $ do
+        it "tells what are the starting steps of the list" $ do
+            startSteps (succList small) `shouldBe` [C]
+
+    describe "end step" $ do
+        it "tells what is the ending step of the list" $ do
+            endStep (succList small)  `shouldBe` E

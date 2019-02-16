@@ -22,3 +22,17 @@ succList = L.foldl addEdge M.empty
     where
     addEdge :: SuccList -> Edge -> SuccList
     addEdge pl (pred,succ) = M.insertWith (\l' l -> (L.nub . L.sort) (l ++ l')) pred [succ] pl
+
+startSteps :: SuccList -> [Step]
+startSteps sl = L.filter (not.(`elem` successors)) steps
+    where
+    steps = M.keys sl
+    successors = concat (M.elems sl)
+
+endStep :: SuccList -> Step
+endStep sl = case L.filter (not.(`elem` steps)) successors of
+    [] -> error "this SuccList has no ending step"
+    l -> head l
+    where
+    steps = M.keys sl
+    successors = concat (M.elems sl)
