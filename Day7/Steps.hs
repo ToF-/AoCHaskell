@@ -24,7 +24,7 @@ data Schedule = Schedule {
     todos :: [Todo],
     successors :: StepList,
     predecessors :: StepList,
-    criticalPaths :: CriticalTime,
+    criticalPathTime :: CriticalTime,
     nextSteps :: [Step]
 } 
 
@@ -91,11 +91,8 @@ schedule n b es = Schedule
     where
     preds = predList es
 
-availableTime :: Schedule -> Time
-availableTime = minimum . L.map workLoad . todos
-    
-assignJob :: Schedule -> Step -> Schedule
-assignJob sc s = sc { todos = replace i t' ts }
+assignStep :: Schedule -> Step -> Schedule
+assignStep sc s = sc { todos = replace i t' ts }
     where
     ts = todos sc
     i = snd (minimum (zip (L.map workLoad ts) [0..]))
@@ -112,8 +109,8 @@ time :: Job -> Time
 time (Job _ t) = t
 time (Idle t)  = t
     
-fillUntil :: Step -> Schedule -> Schedule
-fillUntil s sc = case findJob s (todos sc) of
+idleUntil :: Step -> Schedule -> Schedule
+idleUntil s sc = case findJob s (todos sc) of
    Nothing -> sc
    Just time -> sc { todos = fill time (todos sc) }
 
@@ -130,6 +127,6 @@ start :: Schedule -> Schedule
 start sc = sc { nextSteps = firstSteps }
     where
     firstSteps :: [Step]
-    firstSteps = sortBy (flip (comparing (\s -> s `M.lookup` (criticalPaths sc)))) (startSteps (successors sc))
+    firstSteps = sortBy (flip (comparing (\s -> s `M.lookup` (criticalPathTime sc)))) (startSteps (successors sc))
 
 jobs = L.map reverse . todos
