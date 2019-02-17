@@ -23,7 +23,7 @@ example :
      \           /
       ---->F-----
 
-* successors : [(A,[B,D]),(B,[E]),(C,[A,F]),(D,[E]),(F,[E])]
+* successors : [(A,2),(B,[E]),(C,2),(D,[E]),(F,[E])]
 * starters : members of the successors keys that have no successors : [C]
   predecessors : [(A,[C]),(B,[A]),(D,[A]),(E,[B,D,F]),(F,[C])] + [(C,[])]
 
@@ -61,7 +61,7 @@ example :
   * N = ordered list of steps that are doable (steps with no predecessors)
   * while there are free workers in W 
     * assign each free worker Job with Step S with finish time T + duration of S
-  * M = assigned worker with the minimum finish time
+  * M = assigned worker with the smallesst finish time 
   * J = Job of that worker, S = step of that job
   * update predessors of all successors of S, removing S as a predessors
   * remove S from predecessors
@@ -80,7 +80,7 @@ example :
 * successors : [(A,[B,D]),(B,[E]),(C,[A,F]),(D,[E]),(F,[E])]
 * end step : E
 * starters : members of the successors keys that have no successors : [C]
-  predecessors : [(A,[C]),(B,[A]),(D,[A]),(E,[B,D,F]),(F,[C])] + [(C,[])]
+  predecessors count list : [(A,1),(B,1),(D,1),(E,3),(F,1)] + [(C,0)]
 * create list of steps done Done = []
 * create a list of 2 free workers W= [w1,w2]
 * start with T = 0
@@ -90,10 +90,10 @@ example :
     * F = W | isFree = [w1 free,w2 free]
     * W = [w1 job C 3, w2 free]
     * Next = []
-    * predecessors = [(A,[C]),(B,[A]),(D,[A]),(E,[B,D,F]),(F,[])]
+    * predecessors = [(A,1),(B,1),(D,1),(E,3),(F,1)]
   * end the next job with minimal finish time
     * M = minimum W | ¬ isFree = [w1 Job C 3]
-    * predecessors = [(A,[]),(B,[A]),(D,[A]),(E,[B,D,F]),(F,[])]
+    * predecessors = [(A,O),(B,1),(D,1),(E,3),(F,O)]
     * Done = [C]
     * W = [w1 free, w2 free]
     * T = 3
@@ -103,11 +103,11 @@ example :
     * F = W | isFree = [w1 free,w2 free]
     * W = [w1 job A 4, w2 job F 9]
     * Next = []
-    * predecessors = [(B,[A]),(D,[A]),(E,[B,D,F])]
+    * predecessors = [(B,1),(D,1),(E,3)]
     * Done = [C]
   * end the next job with minimal finish time
     * M = minimum W | ¬ isFree = [w1 Job A 4]
-    * predecessors = [(B,[]),(D,[]),(E,[B,D,F])]
+    * predecessors = [(B,O),(D,O),(E,3)]
     * Done = [C,A]
     * W = [w1 free, w2 Job F 9]
     * T = 4
@@ -117,10 +117,10 @@ example :
     * F = W | isFree = [w1 free]
     * W = [w1 job B 6, w2 job F 9]
     * Next = [D]
-    * predecessors = [(E,[B,D,F])]
+    * predecessors = [(E,3)]
   * end the next job with minimal finish time
     * M = minimum W | ¬ isFree = [w1 Job B 6]
-    * predecessors = [(E,[D,F])]
+    * predecessors = [(E,2)]
     * Done = [C,A,B]
     * W = [w1 free, w2 Job F 9]
     * T = 6
@@ -132,7 +132,7 @@ example :
     * Next = []
   * end the next job with minimal finish time
     * M = minimum W | ¬ isFree = [w2 Job F 9]
-    * predecessors = [(E,[D])]
+    * predecessors = [(E,1)]
     * Done = [C,A,B,F]
     * W = [w1 Job D 10,w2 Free]
     * T = 9
@@ -144,7 +144,7 @@ example :
     * Next = []
   * end the next job with minimal finish time
     * M = minimum W | ¬ isFree = [w1 Job D 10]
-    * predecessors = [(E,[])]
+    * predecessors = [(E,O)]
     * Done = [C,A,B,F,D]
     * W = [w1 free ,w2 free]
     * T = 10
