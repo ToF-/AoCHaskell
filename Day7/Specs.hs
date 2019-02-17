@@ -105,15 +105,44 @@ main = hspec $ do
                 let sch' = next sch
                 nextSteps sch' `shouldBe` [C]
                 nextSteps (next big) `shouldBe` [B,E,U,V] 
-            describe "can assign the next step" $ do
+            describe "can assign the next steps" $ do
                 it "to a worker" $ do
                     workers sch `shouldBe` [Free,Free]
                     let sch' = assign (next sch)
                     workers sch' `shouldBe` [Job 3 C,Free] 
                     nextSteps sch' `shouldBe` []
+                it "to several workers" $ do
+                    let big' = assign (next big)
+                    workers big' `shouldBe` [Job 62 B,Job 65 E,Job 81 U,Job 82 V,Free]
+                    nextSteps (next big') `shouldBe` []
                 it "if there are next steps" $ do
                     workers (assign sch) `shouldBe` [Free,Free]
                 it "if there are free workers" $ do
                     let sch' = assign (next ( sch { workers = [Job 10 F, Job 3 C] }))
                     workers sch'  `shouldBe` [Job 10 F,Job 3 C]
+                    nextSteps (next sch) `shouldBe` [C] 
+            describe "can have workers doing the steps assigned to them" $ do
+                it "get the step done" $ do
+                    M.toList (predecessors sch) `shouldBe` [(A,1),(B,1),(C,0),(D,1),(E,3),(F,1)]
+                    let sch' = work (assign (next sch))
+                    workers sch' `shouldBe` [Free,Free] 
+                    doneSteps sch' `shouldBe` [C]
+                    time sch'  `shouldBe` 3
+                    M.toList (predecessors sch') `shouldBe` [(A,0),(B,1),(D,1),(E,3),(F,0)]
+                it "if the workers have jobs to do" $ do
+                    workers (work sch) `shouldBe` [Free,Free] 
+                    doneSteps (work sch) `shouldBe` []
+                    time (work sch)   `shouldBe` 0
+        describe "run" $ do
+            it "gets all the steps done" $ do
+                let sch = run (schedule 2 0 small)
+                done sch `shouldBe` True
+                doneSteps sch `shouldBe` [C,A,B,F,D,E]
+                time sch `shouldBe` 15
+                let big = run (schedule 5 60 large)
+                doneSteps big `shouldBe` [B,E,U,V,T,A,N,W,D,F,G,P,R,L,O,J,M,H,X,Z,K,Q,C,I,S,Y]
+                time big `shouldBe` 848
+                workers big `shouldBe` []
+                 
+                
             

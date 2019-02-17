@@ -117,9 +117,25 @@ next sch = sch { nextSteps = nextSteps', predecessors = preds }
 assign :: Schedule -> Schedule
 assign sch | L.null (nextSteps sch) = sch
 assign sch | all (/=Free) (workers sch) = sch
-assign sch = sch { workers = workers', nextSteps = nextSteps' }
+assign sch = assign (sch { workers = workers', nextSteps = nextSteps' })
     where
     (step:nextSteps') = L.sort (nextSteps sch)
     (_:ws) = reverse (L.sort (workers sch))
     workers' = L.sort ((Job duration step ) : ws)
     duration = time sch + base sch + fromEnum step
+
+work :: Schedule -> Schedule
+work sch | all (==Free) (workers sch) = sch
+work sch = sch { workers = workers', predecessors = predecessors', doneSteps = doneSteps', time = time' }
+    where
+    (Job t step, workers') = finishNextJob (workers sch)
+    predecessors' = M.delete step 
+        (case step `M.lookup` (successors sch) of
+            Nothing -> predecessors sch
+            Just succs -> L.foldl decreasePredCount (predecessors sch) succs )
+    doneSteps' = (doneSteps sch) ++ [step]
+    time' = t
+
+run :: Schedule -> Schedule
+run sch | done sch = sch
+run sch = run (work (assign (next sch)))
