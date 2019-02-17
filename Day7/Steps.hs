@@ -68,3 +68,58 @@ predCount sl = (fromSucc sl) `M.union` (fromStartSteps sl)
     where 
     fromSucc =  M.fromList . L.map (\g -> (head g, length g)) . L.group . L.sort . L.concat . M.elems 
     fromStartSteps = M.fromList . L.map (\step -> (step,0)) . startSteps
+
+availableSteps :: CountList -> [Step]
+availableSteps = M.keys . M.filter (==0)
+
+decreasePredCount :: CountList -> Step -> CountList
+decreasePredCount cl step = M.adjust pred step cl
+
+type Time = Int
+data Worker = Job Time Step | Free
+    deriving (Eq,Ord,Show)
+
+finishNextJob :: [Worker] -> (Worker,[Worker])
+finishNextJob ws = (head ws', L.sort (Free : tail ws')) 
+    where 
+    ws' = L.sort ws
+
+data Schedule = Schedule { 
+    workers :: [Worker],
+    successors :: SuccList,
+    end        :: Step,
+    predecessors  :: CountList,
+    nextSteps  :: [Step],
+    doneSteps  :: [Step],
+    base       :: Time,
+    time       :: Time }
+    deriving (Eq,Show)
+
+schedule :: Int -> Time -> [Edge] -> Schedule
+schedule n base edges = Schedule ws succs ends preds next  [] base 0 
+    where
+    ws = replicate n Free
+    succs = succList edges
+    ends = endStep succs
+    preds = predCount succs
+    next = []
+    
+done :: Schedule -> Bool
+done sch = end sch `elem` doneSteps sch
+
+next :: Schedule -> Schedule 
+next sch = sch { nextSteps = nextSteps', predecessors = preds }
+    where
+    available = availableSteps (predecessors sch)
+    preds = L.foldl (flip M.delete) (predecessors sch) available 
+    nextSteps' = L.sort (nextSteps sch ++ available)
+
+assign :: Schedule -> Schedule
+assign sch | L.null (nextSteps sch) = sch
+assign sch | all (/=Free) (workers sch) = sch
+assign sch = sch { workers = workers', nextSteps = nextSteps' }
+    where
+    (step:nextSteps') = L.sort (nextSteps sch)
+    (_:ws) = reverse (L.sort (workers sch))
+    workers' = L.sort ((Job duration step ) : ws)
+    duration = time sch + base sch + fromEnum step

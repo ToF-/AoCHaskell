@@ -71,3 +71,49 @@ main = hspec $ do
                 [(A,2),(B,0),(C,8),(D,4),(E,0),(F,2),(G,3),(H,4),(I,8),(J,5),(K,7),(L,2),(M,3)
                 ,(N,1),(O,5),(P,3),(Q,6),(R,4),(S,14),(T,1),(U,0),(V,0),(W,1),(X,3),(Y,8),(Z,7)]
 
+    describe "available steps" $ do
+        it "tells which steps has their pred count at 0" $ do
+            availableSteps (predCount (succList small)) `shouldBe` [C]
+            availableSteps (predCount (succList large)) `shouldBe` [B,E,U,V]
+
+    describe "decrease Pred count" $ do
+        it "decreases the predecessor count of a step" $ do
+            let pc = decreasePredCount (predCount (succList small)) F
+            M.toList pc `shouldBe`[(A,1),(B,1),(C,0),(D,1),(E,3),(F,0)]
+
+    describe "workers"  $ do
+        it "can be free of assignment or assigned a job for a step ending at a given time" $ do
+            Job 3 C `shouldBe` Job 3 C
+        it "can be ordered by job time, free workers are at the end of this sort" $ do
+            L.sort [Free,Job 10 C, Job 3 F] `shouldBe` [Job 3 F, Job 10 C, Free]
+        it "can finish their job and be free again" $ do
+            finishNextJob [Free,Free]  `shouldBe` (Free,[Free,Free])
+            finishNextJob [Free,Job 3 C]  `shouldBe` (Job 3 C,[Free,Free])
+            finishNextJob [Job 10 F,Job 3 C]  `shouldBe` (Job 3 C,[Job 10 F,Free])
+            finishNextJob [Job 3 F,Job 3 C]  `shouldBe` (Job 3 C,[Job 3 F,Free])
+
+    describe "a schedule" $ do
+        describe "can be created for a given number of workers, a base duration, and a list of edges" $ do
+            let sch = schedule 2 0 small
+            let big = schedule 5 60 large
+            it "is not done as long as the last step is not done" $ do
+                done sch `shouldBe` False
+            it "has a time"  $ do
+                time sch `shouldBe` 0
+            it "can find next steps to be working on" $ do
+                nextSteps sch `shouldBe` []
+                let sch' = next sch
+                nextSteps sch' `shouldBe` [C]
+                nextSteps (next big) `shouldBe` [B,E,U,V] 
+            describe "can assign the next step" $ do
+                it "to a worker" $ do
+                    workers sch `shouldBe` [Free,Free]
+                    let sch' = assign (next sch)
+                    workers sch' `shouldBe` [Job 3 C,Free] 
+                    nextSteps sch' `shouldBe` []
+                it "if there are next steps" $ do
+                    workers (assign sch) `shouldBe` [Free,Free]
+                it "if there are free workers" $ do
+                    let sch' = assign (next ( sch { workers = [Job 10 F, Job 3 C] }))
+                    workers sch'  `shouldBe` [Job 10 F,Job 3 C]
+            
