@@ -126,15 +126,16 @@ assign sch = assign (sch { workers = workers', nextSteps = nextSteps' })
 
 work :: Schedule -> Schedule
 work sch | all (==Free) (workers sch) = sch
-work sch = sch { workers = workers', predecessors = predecessors', doneSteps = doneSteps', time = time' }
+work sch = sch { workers      = workers'
+               , predecessors = predecessors'
+               , doneSteps    = doneSteps'
+               , time         = time' }
     where
     (Job time' step, workers') = finishNextJob (workers sch)
-    predecessors' = M.delete step 
-        (case step `M.lookup` (successors sch) of
-            Nothing -> predecessors sch
-            Just succs -> L.foldl decreasePredCount (predecessors sch) succs )
+    succs = fromMaybe [] (step `M.lookup` (successors sch))
+    predecessors' = M.delete step (L.foldl decreasePredCount (predecessors sch) succs)
     doneSteps' = (doneSteps sch) ++ [step]
 
 run :: Schedule -> Schedule
 run sch | done sch = sch
-run sch = run (work (assign (next sch)))
+run sch | not (done sch) = (run . work . assign . next) sch
