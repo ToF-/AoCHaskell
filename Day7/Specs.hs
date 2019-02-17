@@ -171,3 +171,7 @@ main = hspec $ do
                 maxTime small 2 0 `shouldBe` 15
                 maxTime large 5 60 `shouldBe` 1422 -- wrong
         
+
+
+-- lu s sl = maybe [] id (M.lookup s sl)
+-- si s = (L.\\) (lu s) (lu s >>= lu)
