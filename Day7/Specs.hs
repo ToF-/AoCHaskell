@@ -61,6 +61,10 @@ main = hspec $ do
                 (execute (succList small))  `shouldBe` [C,A,B,D,F,E]
                 concatMap show (execute (succList large))  `shouldBe` "BETUFNVADWGPLRJOHMXKZQCISY"
 
+        describe "minimal start times" $ do
+            it "tells at what time at least each step should take place given a base duration" $ do
+                M.toList (minimalTimes 0 (succList small))  `shouldBe` [(A,3),(B,4),(C,0),(D,4),(E,9),(F,3)]
+
     describe "a job" $ do
         it "can be a working step for a given time" $ do
             step (Job A 42) `shouldBe` Just A

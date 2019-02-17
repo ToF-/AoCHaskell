@@ -40,6 +40,17 @@ endStep sl = case L.filter (not.(`elem` steps)) successors of
     steps = M.keys sl
     successors = concat (M.elems sl)
 
+minimalTimes :: Time -> SuccList -> TimeList
+minimalTimes base sl = M.fromList (L.map (minimalTime (predList sl) base) ((endStep sl):M.keys sl))
+
+minimalTime :: PredList -> Time ->Step -> StepTime
+minimalTime pl base step = case step `M.lookup` pl of
+    Nothing -> (step,0)
+    Just preds -> (step, maximum tpreds)
+        where 
+        tpreds = L.map (\pred -> (snd (minimalTime pl base pred)) + base + fromEnum pred) preds
+
+        
 execute :: SuccList -> [Step]
 execute sl = snd $ fmap reverse $ execute' (startSteps sl,[])
     where
