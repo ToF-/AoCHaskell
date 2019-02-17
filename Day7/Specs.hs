@@ -142,7 +142,6 @@ main = hspec $ do
                 let big = run (schedule 5 60 large)
                 doneSteps big `shouldBe` [B,E,U,V,T,A,N,W,D,F,G,P,R,L,O,J,M,H,X,Z,K,Q,C,I,S,Y]
                 time big `shouldBe` 848
-                workers big `shouldBe` []
                  
                 
             

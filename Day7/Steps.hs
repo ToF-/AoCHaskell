@@ -128,13 +128,12 @@ work :: Schedule -> Schedule
 work sch | all (==Free) (workers sch) = sch
 work sch = sch { workers = workers', predecessors = predecessors', doneSteps = doneSteps', time = time' }
     where
-    (Job t step, workers') = finishNextJob (workers sch)
+    (Job time' step, workers') = finishNextJob (workers sch)
     predecessors' = M.delete step 
         (case step `M.lookup` (successors sch) of
             Nothing -> predecessors sch
             Just succs -> L.foldl decreasePredCount (predecessors sch) succs )
     doneSteps' = (doneSteps sch) ++ [step]
-    time' = t
 
 run :: Schedule -> Schedule
 run sch | done sch = sch
