@@ -64,6 +64,9 @@ main = hspec $ do
         describe "minimal start times" $ do
             it "tells at what time at least each step should take place given a base duration" $ do
                 M.toList (minimalTimes 0 (succList small))  `shouldBe` [(A,3),(B,4),(C,0),(D,4),(E,9),(F,3)]
+                M.toList (minimalTimes 60 (succList large))  `shouldBe` 
+                    [(A,82),(B,0),(C,615),(D,143),(E,0),(F,142),(G,165),(H,383),(I,615),(J,313),(K,467),(L,241),(M,318)
+                    ,(N,81),(O,243),(P,165),(Q,538),(R,165),(S,684),(T,62),(U,0),(V,0),(W,82),(X,383),(Y,763),(Z,391)]
 
     describe "a job" $ do
         it "can be a working step for a given time" $ do
