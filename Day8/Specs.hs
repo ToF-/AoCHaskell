@@ -34,3 +34,17 @@ main = hspec $ do
                      `shouldBe` 
                         Node [Node [] [10,11,12]
                          ,Node [Node [] [99]] [2]] [1,1,2]
+
+        describe "can be evaluated" $ do
+            it "to sum of entries if it has no child node" $ do
+                value (Node [] [42,17]) `shouldBe` 59
+                value (fst (tree [2,3,0,3,10,11,12,1,1,0,1,99,2,1,1,2])) `shouldBe` 66
+
+            it "to values of child nodes if it has child nodes" $ do
+                value (Node [Node [] [100]] [1]) `shouldBe` 100
+                value (Node [Node [] [100]
+                            ,Node [] [10]] [1,2]) `shouldBe` 110
+            it "to 0 for a ill referenced child node" $ do
+                value (Node [Node [] [100]] [0]) `shouldBe` 0
+                value (Node [Node [] [100]] [7]) `shouldBe` 0
+
