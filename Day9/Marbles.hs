@@ -1,14 +1,20 @@
 module Marbles
 where
-import Data.List
+import Data.List as L 
+import Data.Map as M
+import Data.Maybe
 
+type Score = Int
+type Player = Int
 type Marble = Int
+type Scores = Map Player Score
+
 data Circle = Circle { 
     marbles :: [Marble],
-    posCurrent :: Int,
-    lastInserted :: Int,
-    scores :: [Int],
-    player :: Int
+    current :: Int,
+    scores  :: Scores,
+    player  :: Player,
+    marble  :: Marble
     }
     deriving (Eq)
 
@@ -16,10 +22,10 @@ instance Show Circle where
     show = showCircle 
     
 circle :: Int -> Circle
-circle n = Circle [0] 1 0 (replicate n 0) 0
+circle n = Circle [0] 1 (newScores n) 0 1
 
-current :: Circle -> Marble
-current c = (marbles c) !! ((posCurrent c)-1)
+newScores :: Int -> Scores 
+newScores n = M.fromList (zip [0..n-1] (repeat 0))
 
 next :: Int -> Int -> Int
 next size pos | pos >= size = 1 +  pos + 2 - (size+1)
@@ -30,28 +36,23 @@ prev size pos | pos <= 7   = size + pos - 7
               | otherwise = pos - 7
  
 add :: Circle -> Circle
-add (Circle marbles pos last sc player) 
-    | ((last+1) `mod` 23) == 0 = let
+add (Circle marbles current scores player marble) 
+    | (marble `mod` 23) == 0 = let
     
-    pos'     = prev (length marbles) pos
-    taken    = marbles !! (pos'-1)
-    marbles' = delete taken marbles
-    last'    = succ last
-    score    = (sc !! player) + last' + (marbles !! (pos'-1))
-    scores' =  replace player score sc
-    player'= (succ player) `mod` (length sc)
-    in Circle marbles' pos' last' (take 3 scores') player'
+    current' = prev (length marbles) current
+    taken    = marbles !! (current'-1)
+    marbles' = L.delete taken marbles
+    scores' =  M.insertWith (+) player (taken+marble) scores
+    player'= (succ player) `mod` (M.size scores)
+    in Circle marbles' current' scores' player' (succ marble) 
 
-add (Circle marbles pos last scores player) = let
-    pos' = next (length marbles) pos
-    ins = pos' - 1
-    marbles' = take ins marbles ++ return last' ++ drop ins marbles
-    last' = succ last
-    player' = (succ player') `mod` (length scores)
-    in Circle marbles' pos' last' scores player'
 
-replace :: Int -> a -> [a] -> [a]
-replace n elem elems = (take (n-1) elems) ++ [elem] ++ (drop n elems)
+add (Circle marbles current scores player marble) = let
+    current' = next (length marbles) current
+    (before, after) = L.splitAt (current'-1) marbles    
+    marbles' = L.concat [before, [marble], after]
+    player'= (succ player) `mod` (M.size scores)
+    in Circle marbles' current' scores player' (succ marble)
 
 showCircle :: Circle -> String
 showCircle (Circle ms pc _ _ _) = 
@@ -62,4 +63,7 @@ showCircle (Circle ms pc _ _ _) =
                    | otherwise =       show m
 
 play :: Int -> Int -> Circle
-play n p = (last (take (succ n) (iterate add (circle p))))
+play n p = (last (L.take (succ n) (iterate add (circle p))))
+
+highScore :: Circle -> Score
+highScore = maximum . M.elems . scores 
