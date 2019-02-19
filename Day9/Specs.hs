@@ -38,3 +38,14 @@ main = hspec $ do
             show (foldl (\c n -> play n c) i [1..7]) `shouldBe` "0 4 2 5 1 6 3 (7)"
             show (foldl (\c n -> play n c) i [1..22])`shouldBe`
                 "0 16 8 17 4 18 9 19 2 20 10 21 5 (22) 11 1 12 6 13 3 14 7 15"
+
+        it "can remove the head" $ do
+            show (remove (add 1 i)) `shouldBe` "(1,(0))"
+            show (remove (add 2 (add 1 i))) `shouldBe` "(2,(0) 1)"
+            show (remove (play 2 (play 1 i))) `shouldBe` "(2,0 (1))"
+
+        it "can shift the head to the left" $ do
+            show (left i) `shouldBe` "(0)"
+            show (left (add 1 i)) `shouldBe` "(0) 1"
+            show (left (left (add 1 i))) `shouldBe` "0 (1)"
+            show (left (list [1..3])) `shouldBe` "0 1 (2) 3"

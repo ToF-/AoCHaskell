@@ -28,3 +28,12 @@ right (Circle ls h rs) = Circle (h:ls) (head rs) (tail rs)
 play :: Int -> Circle -> Circle
 play n c = add n (right c)
 
+remove :: Circle -> (Int,Circle)
+remove (Circle ls h []) = (h, Circle [] (head rs) (tail rs))
+    where  rs = (reverse ls)
+remove (Circle ls h rs) = (h, Circle ls (head rs) (tail rs))
+
+left :: Circle -> Circle
+left (Circle [] h []) = Circle [] h []
+left (Circle ls h []) = Circle (tail ls) (head ls) [h]
+left (Circle [] h rs) = Circle (h:(init rs)) (last rs) []
