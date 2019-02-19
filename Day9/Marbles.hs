@@ -2,6 +2,8 @@ module Marbles
 where
 import Data.List as L
 import Data.Map as M
+import Data.Sequence as S
+import Data.Maybe
 
 type Score = Int
 type Player = Int
@@ -14,54 +16,43 @@ data Game = Game { circle :: Circle
                  , marble :: Marble }
     deriving (Eq,Show)
 
-data Circle = Circle [Int] Int [Int]
-    deriving Eq
+data Circle = Circle { marbles :: Seq Marble, pos :: Int }
+    deriving (Eq,Show)
 
-instance Show Circle where
-    show (Circle ls h rs) = interSpace [showL (reverse ls), "(" ++ show h ++ ")", showL rs]
+newCircle :: Marble -> Circle
+newCircle n = Circle (S.singleton n) 0
 
-showL = interSpace . L.map show
+atPos :: Circle -> Marble
+atPos (Circle ms p) = fromJust (S.lookup p ms)
 
-interSpace :: [String] -> String
-interSpace = concat . intersperse " " . L.filter (/= "")
-
-newCircle :: Int -> Circle
-newCircle n = Circle [] n []
-
-add :: Int -> Circle -> Circle
-add n (Circle ls h rs) = Circle (h:ls) n rs
+add :: Marble -> Circle -> Circle
+add n (Circle ms p) = Circle (S.insertAt p' n ms) p'
+    where p' = succ p
 
 right :: Circle -> Circle
-right (Circle [] h []) = Circle [] h []
-right (Circle ls h []) = Circle [] (head rs) (tail rs)
-    where rs = (reverse ls) ++ [h]
-right (Circle ls h rs) = Circle (h:ls) (head rs) (tail rs)
-
-toList :: Circle -> [Int]
-toList (Circle ls h rs) = ls ++ [h] ++ rs
+right (Circle ms p) = Circle ms ((succ p)`mod` S.length ms)
 
 play :: Int -> Circle -> Circle
 play n c = add n (right c)
 
 remove :: Circle -> (Int,Circle)
-remove (Circle ls h []) = (h, Circle [] (head rs) (tail rs))
-    where  rs = (reverse ls)
-remove (Circle ls h rs) = (h, Circle ls (head rs) (tail rs))
+remove (Circle ms p) = (fromJust (S.lookup p ms), Circle ms' p')
+    where
+    ms' = (S.deleteAt p ms) 
+    p' = if p < S.length ms' then p else 0
 
 left :: Circle -> Circle
-left (Circle [] h []) = Circle [] h []
-left (Circle ls h []) = Circle (tail ls) (head ls) [h]
-left (Circle [] h rs) = Circle (reverse (h:(init rs))) (last rs) []
-left (Circle ls h rs) = Circle (tail ls) (head ls) (h:rs)
+left (Circle ms 0) = (Circle ms (S.length ms - 1))
+left (Circle ms p) = (Circle ms (pred p))
 
 win :: Circle -> (Int,Circle)
 win = remove . left . left . left . left . left . left . left 
 
 count :: Circle -> Int
-count (Circle ls h rs) = 1 + length ls + length rs
+count (Circle ms p) = S.length ms
 
 game :: Int -> Game
-game n = Game (newCircle 0) (M.fromList (zip [0..n-1] (repeat 0))) 0 1
+game n = Game (newCircle 0) (M.fromList (L.zip [0..n-1] (repeat 0))) 0 1
 
 move :: Game -> Game
 move (Game circle scores player marble) = Game circle' scores' player' marble'
