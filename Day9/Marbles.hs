@@ -37,3 +37,7 @@ left :: Circle -> Circle
 left (Circle [] h []) = Circle [] h []
 left (Circle ls h []) = Circle (tail ls) (head ls) [h]
 left (Circle [] h rs) = Circle (h:(init rs)) (last rs) []
+left (Circle ls h rs) = Circle (tail ls) (head ls) (h:rs)
+
+win :: Circle -> (Int,Circle)
+win = remove . left . left . left . left . left . left . left 

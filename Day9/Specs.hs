@@ -49,3 +49,10 @@ main = hspec $ do
             show (left (add 1 i)) `shouldBe` "(0) 1"
             show (left (left (add 1 i))) `shouldBe` "0 (1)"
             show (left (list [1..3])) `shouldBe` "0 1 (2) 3"
+            show (left (left (list [1..3]))) `shouldBe` "0 (1) 2 3"
+
+        it "winning is shifting left seven times and then removing" $ do
+            let c = (foldl (\c n -> play n c) i [1..22])
+            
+            show (win c)  `shouldBe` 
+                "(9,0 16 8 17 4 18 (19) 2 20 10 21 5 22 11 1 12 6 13 3 14 7 15)"
