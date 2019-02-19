@@ -37,6 +37,9 @@ right (Circle ls h []) = Circle [] (head rs) (tail rs)
     where rs = (reverse ls) ++ [h]
 right (Circle ls h rs) = Circle (h:ls) (head rs) (tail rs)
 
+toList :: Circle -> [Int]
+toList (Circle ls h rs) = ls ++ [h] ++ rs
+
 play :: Int -> Circle -> Circle
 play n c = add n (right c)
 
@@ -48,7 +51,7 @@ remove (Circle ls h rs) = (h, Circle ls (head rs) (tail rs))
 left :: Circle -> Circle
 left (Circle [] h []) = Circle [] h []
 left (Circle ls h []) = Circle (tail ls) (head ls) [h]
-left (Circle [] h rs) = Circle (h:(init rs)) (last rs) []
+left (Circle [] h rs) = Circle (reverse (h:(init rs))) (last rs) []
 left (Circle ls h rs) = Circle (tail ls) (head ls) (h:rs)
 
 win :: Circle -> (Int,Circle)
