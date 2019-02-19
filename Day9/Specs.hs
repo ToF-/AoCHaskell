@@ -143,5 +143,6 @@ main = hspec $ do
             result 17  1104 `shouldBe` 2764
             result 21  6111 `shouldBe` 54718
             result 30  5807 `shouldBe` 37305
-
+            result 468 71843  `shouldBe` 385820
+            result 468 7184300  `shouldBe` 0
 
