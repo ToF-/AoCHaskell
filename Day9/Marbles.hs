@@ -1,6 +1,18 @@
 module Marbles
 where
-import Data.List
+import Data.List as L
+import Data.Map as M
+
+type Score = Int
+type Player = Int
+type Marble = Int
+type Scores = Map Player Score
+
+data Game = Game { circle :: Circle
+                 , scores :: Scores
+                 , player :: Player
+                 , marble :: Marble }
+    deriving (Eq,Show)
 
 data Circle = Circle [Int] Int [Int]
     deriving Eq
@@ -8,13 +20,13 @@ data Circle = Circle [Int] Int [Int]
 instance Show Circle where
     show (Circle ls h rs) = interSpace [showL (reverse ls), "(" ++ show h ++ ")", showL rs]
 
-showL = interSpace . map show
+showL = interSpace . L.map show
 
 interSpace :: [String] -> String
-interSpace = concat . intersperse " " . filter (/= "")
+interSpace = concat . intersperse " " . L.filter (/= "")
 
-circle :: Int -> Circle
-circle n = Circle [] n []
+newCircle :: Int -> Circle
+newCircle n = Circle [] n []
 
 add :: Int -> Circle -> Circle
 add n (Circle ls h rs) = Circle (h:ls) n rs
@@ -41,3 +53,25 @@ left (Circle ls h rs) = Circle (tail ls) (head ls) (h:rs)
 
 win :: Circle -> (Int,Circle)
 win = remove . left . left . left . left . left . left . left 
+
+count :: Circle -> Int
+count (Circle ls h rs) = 1 + length ls + length rs
+
+game :: Int -> Game
+game n = Game (newCircle 0) (M.fromList (zip [0..n-1] (repeat 0))) 0 1
+
+move :: Game -> Game
+move (Game circle scores player marble) = Game circle' scores' player' marble'
+    where
+    (score,(removed,circle')) = case marble `mod` 23 == 0 of
+        False -> (0,(0,play marble circle))
+        True -> (marble,win circle)
+    scores' = M.insertWith (+) player (score + removed) scores
+    player' = (succ player)`mod` (M.size scores)
+    marble' = succ marble
+
+moves :: Int -> Game -> Game
+moves n g = L.foldl (\g _ -> move g) g [1..n]
+
+highScore :: Game -> Score
+highScore = L.maximum . M.elems . scores
