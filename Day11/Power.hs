@@ -34,11 +34,6 @@ grid serial = array (1,300) (map rowArray [1..300])
     rowArray row = (row, array (1,300) (map (cell row) [1..300]))
     cell row col = (col,powerLevel serial col row)
 
-squareLevel :: Grid -> Int -> Int -> Int -> Int
-squareLevel grid x y size = foldl (\acc row -> acc + rowLevel row) 0 [y..y+size-1]
-    where
-    rowLevel row = foldl (\acc col -> acc + grid ! row ! col) 0 [x..x+size-1]
-
 squares :: Int -> [Square]
 squares m = [(x,y,s)| x <- [1..m], y<-[1..m], s <-[1..min (m+1-x) (m+1-y)]]
 
@@ -49,7 +44,7 @@ bestSquare grid = foldl (\(acc,best) square -> compareSquare (acc,best) square) 
         GT -> (sl,(x,y,s))
         _  -> (acc,best)
         where
-        sl = squareLevel grid x y s
+        sl = squareSum grid x y s
          
 
 partialSums :: Array Int (Array Int Int) -> Array Int (Array Int Int)
@@ -59,3 +54,12 @@ partialSums g = toGrid sums
     sums = transpose (map (scanl1 (+)) (transpose (map (scanl1 (+)) es)))
     toGrid = listArray bs . map (listArray bs)
     bs = bounds g
+
+squareSum ps x y s = rectangleSum ps x y s s
+
+rectangleSum :: Grid -> Int -> Int -> Int -> Int -> Int
+rectangleSum ps 1 1 w h = ps!h!w 
+rectangleSum ps 1 y w h = 0              + ps!(y-1+h)!     w  - ps!(y-1)!     w  - 0
+rectangleSum ps x 1 w h = 0              + ps!     h !(x-1+w) - 0                - ps!     h !(x-1)
+rectangleSum ps x y w h = (ps!(y-1)!(x-1)) + (ps!(y-1+h)!(x-1+w)) - (ps!(y-1)!(x-1+w)) - (ps!(y-1+h)!(x-1))
+

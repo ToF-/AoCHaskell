@@ -32,6 +32,7 @@ main = hspec $ do
 
     describe "power grid" $ do
         let g = grid 18
+            p = partialSums g
         it "creates a 300x300 grid from a given serial" $ do
             g ! 1 ! 1 `shouldBe` powerLevel 18 1 1
             g ! 300 ! 300 `shouldBe` powerLevel 18 300 300
@@ -39,7 +40,7 @@ main = hspec $ do
         describe "square level" $ do
             it "tells the power level of any square area" $ do
                 let sq = square3x3Level 18 33 45
-                squareLevel g 33 45 3 `shouldBe` (sum . map sum) sq
+                squareSum p 33 45 3 `shouldBe` (sum . map sum) sq
 
         describe "squares " $ do
             it "tells all the possibles squares within a grid of a given size" $ do
@@ -67,3 +68,5 @@ main = hspec $ do
                                     ,(6,array (1,6) (zip [1..6] [111,222,333,444,555,666]))]
                 
                 partialSums a  `shouldBe` b
+                squareSum b 1 1 1 `shouldBe` 31 
+                rectangleSum b 3 4 3 2 `shouldBe` 111
