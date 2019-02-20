@@ -2,6 +2,14 @@ import Test.Hspec
 import Power
 import Data.Array 
 
+a :: Array Int (Array Int Int)
+a = array (1,6) [(1,array (1,6) (zip [1..6] [31, 2, 4,33, 5,36]))
+                ,(2,array (1,6) (zip [1..6] [12,26, 9,10,29,25]))
+                ,(3,array (1,6) (zip [1..6] [13,17,21,22,20,18]))
+                ,(4,array (1,6) (zip [1..6] [24,23,15,16,14,19]))
+                ,(5,array (1,6) (zip [1..6] [30, 8,28,27,11, 7]))
+                ,(6,array (1,6) (zip [1..6] [ 1,35,34, 3,32,36]))]
+
 main = hspec $ do
     describe "power level" $ do
         it "depends on x,y and serial" $ do
@@ -44,13 +52,18 @@ main = hspec $ do
         
         describe "partial sums" $ do
             it "tells for a cell x,y the sum of all the cells on the left and above x,y + cell x,y" $ do
-                let a = array (1,6) [(1,array (1,6) (zip [1..6] [31, 2, 4,33, 5,36]))
-                                    ,(2,array (1,6) (zip [1..6] [12,26, 9,10,29,25]))
-                                    ,(3,array (1,6) (zip [1..6] [13,17,21,22,20,18]))
-                                    ,(4,array (1,6) (zip [1..6] [24,23,15,16,14,19]))
-                                    ,(5,array (1,6) (zip [1..6] [30, 8,28,27,11, 7]))
-                                    ,(6,array (1,6) (zip [1..6] [ 1,35,34, 3,32,36]))]
-                let ps = partialSums a
+                let a = array (1,6) [(1,array (1,6) (zip [1..6] [ 31,  2,  4, 33,  5, 36]))
+                                    ,(2,array (1,6) (zip [1..6] [ 12, 26,  9, 10, 29, 25]))
+                                    ,(3,array (1,6) (zip [1..6] [ 13, 17, 21, 22, 20, 18]))
+                                    ,(4,array (1,6) (zip [1..6] [ 24, 23, 15, 16, 14, 19]))
+                                    ,(5,array (1,6) (zip [1..6] [ 30,  8, 28, 27, 11,  7]))
+                                    ,(6,array (1,6) (zip [1..6] [  1, 35, 34,  3, 32,  6]))]
 
-                ps ! 2 ! 3  `shouldBe` 101
-
+                let b = array (1,6) [(1,array (1,6) (zip [1..6] [ 31, 33, 37, 70, 75,111]))
+                                    ,(2,array (1,6) (zip [1..6] [ 43, 71, 84,127,161,222]))
+                                    ,(3,array (1,6) (zip [1..6] [ 56,101,135,200,254,333]))
+                                    ,(4,array (1,6) (zip [1..6] [ 80,148,197,278,346,444]))
+                                    ,(5,array (1,6) (zip [1..6] [110,186,263,371,450,555]))
+                                    ,(6,array (1,6) (zip [1..6] [111,222,333,444,555,666]))]
+                
+                partialSums a  `shouldBe` b
