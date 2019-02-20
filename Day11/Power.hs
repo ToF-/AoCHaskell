@@ -51,3 +51,17 @@ bestSquare grid = foldl (\(acc,best) square -> compareSquare (acc,best) square) 
         sl = squareLevel grid x y s
          
 
+partialSums :: Array Int (Array Int Int) -> Array Int (Array Int Int)
+partialSums grid = array (a,z) (zipWith grow [a..z] (tail (scanl rowSums initial [a..z])))
+    where
+    (a,z) = bounds grid
+    initial = (0,array (a,z) (zip [a..z] [0..]))
+    grow :: Int -> (Int,Array Int Int) -> (Int,Array Int Int)
+    grow ix (acc,ar) = (ix, ar)
+
+    rowSums :: (Int,Array Int Int) -> Int -> (Int,Array Int Int)
+    rowSums (acc,ar) ix = (acc',sums)
+        where
+        (a,z) = bounds ar
+        sums = array (a,z) (zip [a..z] (tail (scanl (+) acc (elems (grid!ix)))))   
+        acc' = acc + sums!a

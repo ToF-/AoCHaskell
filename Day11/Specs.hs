@@ -37,7 +37,20 @@ main = hspec $ do
             it "tells all the possibles squares within a grid of a given size" $ do
                 squares 1 `shouldBe` [(1,1,1)]
                 squares 2 `shouldBe` [(1,1,1),(1,1,2),(1,2,1),(2,1,1),(2,2,1)]
-        describe "best square" $ do
-            it "tells the square with the largest power value in a grid given a serial" $ do
-                -- bestSquare g `shouldBe` (113,(90,269,16)) -- too long
--- see https://en.wikipedia.org/wiki/Summed-area_table#/media/File:Integral_image_application_example.svg
+--         describe "best square" $ do
+--             it "tells the square with the largest power value in a grid given a serial" $ do
+--                 -- bestSquare g `shouldBe` (113,(90,269,16)) -- too long
+-- -- see https://en.wikipedia.org/wiki/Summed-area_table#/media/File:Integral_image_application_example.svg
+        
+        describe "partial sums" $ do
+            it "tells for a cell x,y the sum of all the cells on the left and above x,y + cell x,y" $ do
+                let a = array (1,6) [(1,array (1,6) (zip [1..6] [31, 2, 4,33, 5,36]))
+                                    ,(2,array (1,6) (zip [1..6] [12,26, 9,10,29,25]))
+                                    ,(3,array (1,6) (zip [1..6] [13,17,21,22,20,18]))
+                                    ,(4,array (1,6) (zip [1..6] [24,23,15,16,14,19]))
+                                    ,(5,array (1,6) (zip [1..6] [30, 8,28,27,11, 7]))
+                                    ,(6,array (1,6) (zip [1..6] [ 1,35,34, 3,32,36]))]
+                let ps = partialSums a
+
+                ps ! 2 ! 3  `shouldBe` 101
+
