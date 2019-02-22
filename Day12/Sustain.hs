@@ -2,12 +2,13 @@ module Sustain
 where
 import Data.Maybe
 
-type Pattern = String
-type Notes = [(Pattern,Char)]
-find :: Pattern -> Notes -> Bool
-find p notes = maybe False (=='#') (lookup p notes)
+type Pattern = [Int]
+type Note = (String,Char)
 
+number :: Int -> String -> Pattern
+number i s = map snd (filter (\(c,n) -> c=='#') (s `zip` [i..]))
 
-numberPots :: Pattern -> [(Char,Int)]
-numberPots p = ("....." ++ p ++ ".....") `zip` [-5..]
-
+patterns :: [Note] -> [Pattern]
+patterns = map (number (-2)) . map fst . filter ((=='#').snd) 
+    
+    
