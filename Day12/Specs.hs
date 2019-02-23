@@ -1,33 +1,43 @@
 import Test.Hspec
+import Test.QuickCheck
 import Sustain
 
-notes = [("...##",'#')
-        ,("..#..",'#')
-        ,(".#...",'#')
-        ,(".#.#.",'#')
-        ,(".#.##",'#')
-        ,(".##..",'#')
-        ,(".####",'#')
-        ,("#.#.#",'#')
-        ,("#.###",'#')
-        ,("##.#.",'#')
-        ,("##.##",'#')
-        ,("###..",'#')
-        ,("###.#",'#')
-        ,("####.",'#')
-        ,(".....",'.')]
+notes = ["...##"
+        ,"..#.."
+        ,".#..."
+        ,".#.#."
+        ,".#.##"
+        ,".##.."
+        ,".####"
+        ,"#.#.#"
+        ,"#.###"
+        ,"##.#."
+        ,"##.##"
+        ,"###.."
+        ,"###.#"
+        ,"####."]
+
+initial = "#..#.#..##......###...###"
+
+listOfPlants :: Gen String
+listOfPlants = fmap (trim . ('#':)) (listOf1 (elements ['#','.']))
+    where
+    trim = reverse . dropWhile (=='.') . reverse
 
 main = hspec $ do
-    describe "number" $ do
+    describe "numbers" $ do
         it "tells the numbers of the pots containing a plant" $ do
-            number 0 "#..#.#..##......###...###" `shouldBe` [0,3,5,8,9,16,17,18,22,23,24]
+            numbers 0    initial `shouldBe` [0,0,3,5,8,9,16,17,18,22,23,24]
+            numbers (-5) initial `shouldBe` [-5,-5,-2,0,3,4,11,12,13,17,18,19]
+    describe "plants" $ do
+        it "tells the plants from a list of numbers" $ do
+            plants [0,0,3,5,8,9,16,17,18,22,23,24] `shouldBe` initial
 
-    describe "patterns" $ do
-        it "denote sequence of plants that sustain in position 0" $ do
-            let ps = patterns notes
-            ps!!0 `shouldBe` [1,2]
-            ps!!1 `shouldBe` [0]
-            ps!!2  `shouldBe` [-1]
-            ps!!3  `shouldBe` [-1,1]
-            (last ps) `shouldBe` [-2,-1,0,1]
+    describe "offset" $ do
+        it "describe a list of plants with an number of empty pots ahead" $ do
+            offset (-3) [0,0] `shouldBe` "...#"
 
+    describe "plants and numbers" $ do
+        it "are symmetrical" $ forAll listOfPlants $ \s -> forAll (choose (-5,5)) $ 
+            \n -> plants (numbers n s) == s
+            

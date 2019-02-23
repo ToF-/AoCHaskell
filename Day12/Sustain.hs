@@ -5,10 +5,16 @@ import Data.Maybe
 type Pattern = [Int]
 type Note = (String,Char)
 
-number :: Int -> String -> Pattern
-number i s = map snd (filter (\(c,n) -> c=='#') (s `zip` [i..]))
+numbers :: Int -> String -> Pattern
+numbers i s = i : map snd (filter (\(c,n) -> c=='#') (s `zip` [i..]))
 
-patterns :: [Note] -> [Pattern]
-patterns = map (number (-2)) . map fst . filter ((=='#').snd) 
-    
-    
+plants :: Pattern -> String
+plants p = plant' (head p) (tail p)
+    where
+    plant' _ [] = []
+    plant' i (n:ns) | i == n = '#' : plant' (succ i) ns
+                    | i < n = '.' : plant' (succ i) (n:ns)
+                    | i > n = error "ill formed pattern"
+                
+offset :: Int -> Pattern -> String
+offset o (n:ns) = (replicate (n-o) '.') ++ plants (n:ns)
