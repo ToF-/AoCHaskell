@@ -5,8 +5,8 @@ import Data.Maybe
 type Pattern = [Int]
 type Note = (String,Char)
 
-numbers :: Int -> String -> Pattern
-numbers i s = i : map snd (filter (\(c,n) -> c=='#') (s `zip` [i..]))
+pattern :: Int -> String -> Pattern
+pattern i s = i : map snd (filter (\(c,n) -> c=='#') (s `zip` [i..]))
 
 plants :: Pattern -> String
 plants p = plant' (head p) (tail p)
