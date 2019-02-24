@@ -60,4 +60,17 @@ main = hspec $ do
                         let i = initial (take 30 s)
                             p = extendLeft (extendRight i r) l
                         in normalize p == i
-                            
+    describe "note" $ do
+        it "is a pattern of 5 plants" $ note "#..#." `shouldBe` Pattern 0 5 18
+        it "can be extended many times to attain a given size" $ do
+            map represent (extensions (note "#..#.") 7) `shouldBe`
+                ["#..#.","#..#..","#..#..."]
+    describe "match" $ do
+        it "tells if a note matches a pattern at the last position" $ do
+            ((initial "#..#.#..#..#") `match` (note ".#..#")) `shouldBe` True
+            ((initial "#..#.#..#..#") `match` (extendRight (note ".#..#") 1)) `shouldBe` False
+    describe "matches" $ do
+         it "tells if a note matches a pattern in what positions" $ do
+            ((initial "#..#.#..#..#") `matches` (note ".#..#")) `shouldBe` [1,6,9]
+            ((initial "#..#.#..#..#") `matches` (note "....#")) `shouldBe` [1,6,9]
+
