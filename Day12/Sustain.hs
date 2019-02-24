@@ -1,40 +1,46 @@
 module Sustain
 where
-import Data.Maybe
+import Data.Bits
 
-type Pattern = [Int]
-type Note = String
+type Start = Int
+type Count = Int
+type Pots = Integer
+data Pattern = Pattern Start Count Pots
+    deriving (Eq, Show)
 
-pattern :: Int -> String -> Pattern
-pattern i s = i : map snd (filter (\(c,n) -> c=='#') (s `zip` [i..]))
-
-plants :: Pattern -> String
-plants p = plant' (head p) (tail p)
+initial :: String -> Pattern
+initial = addBits . trimRight . trimLeft
     where
-    plant' _ [] = []
-    plant' i (n:ns) | i == n = '#' : plant' (succ i) ns
-                    | i < n = '.' : plant' (succ i) (n:ns)
-                    | i > n = error "ill formed pattern"
-                
-offset :: Int -> Pattern -> String
-offset o (n:ns) | o < n = take 5 ((replicate (n-o) '.') ++ plants (n:ns) ++ (repeat '.'))
-offset o (n:ns)         = take 5 (drop (o - n) (plants (n:ns) ++ (repeat '.')))
+    addBits "" = error "ill formed initial pattern"
+    addBits s = foldl addPot (Pattern 0 0 0) s
+    addPot (Pattern s c pots) '#' = Pattern s (succ c) ((pots `shiftL` 1) `setBit` 0)
+    addPot (Pattern s c pots) '.' = Pattern s (succ c) (pots `shiftL` 1)
 
-sustainAt :: Pattern -> [Note] -> Int -> Maybe  Int
-sustainAt p notes o = case any (== (offset o p)) notes of
-    False -> Nothing
-    True -> Just (o+2)
+    trimRight = reverse . trimLeft . reverse
 
-sustain :: Pattern -> [Note] -> Pattern
-sustain p notes = case catMaybes (map (\o -> sustainAt p notes o) [start..end]) of
-    [] -> []
-    (n:ns) -> (n:n:ns)
+    trimLeft = dropWhile (=='.')
+
+extendRight :: Pattern -> Count -> Pattern
+extendRight (Pattern s c pots) n = Pattern s (c + n) (pots `shiftL` n)
+
+extendLeft :: Pattern -> Count -> Pattern
+extendLeft (Pattern s c pots) n = Pattern (s-n) (c + n) pots
+
+represent :: Pattern -> String
+represent (Pattern s c pots) = replicate (c-length (repr)) '.' ++ repr
     where
-    start = head p - 5
-    end = last p + 5
+    repr = reverse (addChar pots) 
+    addChar 0 = "."
+    addChar 1 = "#"
+    addChar pots | odd pots  = '#' : addChar (pots `shiftR` 1)
+                 | otherwise = '.' : addChar (pots `shiftR` 1)
 
-sustainN :: Int -> Pattern -> [Note] -> Pattern
-sustainN n p notes = foldl (\acc _ -> sustain acc notes) p [1..n]
-
-sumPots :: Pattern -> Int
-sumPots (n:ns) = sum ns
+normalize :: Pattern -> Pattern 
+normalize = normalizeLeft . normalizeRight 
+    where
+    normalizeRight p@(Pattern _ 0 _) = p
+    normalizeRight p@(Pattern s c pots) | odd pots  = p
+                                        | otherwise = normalizeRight (Pattern s (pred c) (pots `shiftR` 1))
+    normalizeLeft p@(Pattern _ 0 _) = p
+    normalizeLeft p@(Pattern s c pots)  | pots `testBit` (pred c) = p 
+                                        | otherwise = normalizeLeft (Pattern (succ s) (pred c) pots)
