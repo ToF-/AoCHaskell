@@ -54,7 +54,7 @@ extensions :: Pattern -> Int -> [Pattern]
 extensions p@(Pattern _ c _) n = map (\n -> p `extendRight` n) [0..n-c]
 
 match :: Pattern -> Pattern -> Bool
-match (Pattern _ _ pots) (Pattern _ _ note) = (pots .&. note) == note
+match (Pattern _ _ pots) (Pattern _ _ note) = (pots `xor` note) == complement note
 
 matches :: Pattern -> Pattern -> [Int]
 matches p note = 
