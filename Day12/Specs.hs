@@ -1,22 +1,22 @@
 import Test.Hspec
 import Test.QuickCheck
 import Sustain
+import Data.Array
 
-n = notes 
-    ["...##"
-    ,"..#.."
-    ,".#..."
-    ,".#.#."
-    ,".#.##"
-    ,".##.."
-    ,".####"
-    ,"#.#.#"
-    ,"#.###"
-    ,"##.#."
-    ,"##.##"
-    ,"###.."
-    ,"###.#"
-    ,"####."]
+ns = map pattern ["...##"
+                 ,"..#.."
+                 ,".#..."
+                 ,".#.#."
+                 ,".#.##"
+                 ,".##.."
+                 ,".####"
+                 ,"#.#.#"
+                 ,"#.###"
+                 ,"##.#."
+                 ,"##.##"
+                 ,"###.."
+                 ,"###.#"
+                 ,"####."]
 
 --                 1         2         3     
 --       0         0         0         0     
@@ -27,12 +27,13 @@ n = notes
 --20: .#....##....#####...#######....#.#..##.
 --
 
-i = initial "#..#.#..##......###...###" 
-initialPattern :: Gen (Int,String)
-initialPattern = fmap ((\s -> (0,s)).(++"#").('#':)) $ listOf1 (elements "#.")
+i = pattern "#..#.#..##......###...###" 
+initialPattern :: Gen Pattern
+initialPattern = fmap (pattern . ('#':) . (++"#")) $ listOf1 (elements "#.")
 
 main = do 
-    quickCheck $ forAll initialPattern $ \(n,s) ->  head s == '#' && last s == '#'
+    quickCheck $ forAll initialPattern $ \p ->
+        let (start,end) = bounds p in p!start == '#' && p!end == '#'
     quickCheck $ forAll initialPattern $ \p -> 
         forAll (choose (1,4)) $ \l ->
             forAll (choose (1,4)) $ \r ->
@@ -41,11 +42,12 @@ main = do
                  in normalize p' == p
     hspec $ do
         describe "sustain" $ do
+            let pat a = (fst (bounds a),elems a)
             it "tells which pots will contain a plant according to notes" $ do
-                let p = (0,"#..#.#..##......###...###")
-                sustain p notes `shouldBe` (0,"#...#....#.....#..#..#..#")
+                let p = pattern "#..#.#..##......###...###"
+                pat (sustain p ns) `shouldBe` (0,"#...#....#.....#..#..#..#")
 
             it "can be repeated" $ do
-                times 20 (flip sustain notes) initial `shouldBe`  
-                 (-2,"#....##....#####...#######....#.#..##")
+                let r = times 20 (flip sustain ns) i 
+                pat r `shouldBe` (-2,"#....##....#####...#######....#.#..##")
         
