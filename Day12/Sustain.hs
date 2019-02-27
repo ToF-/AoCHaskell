@@ -1,38 +1,48 @@
+{-# LANGUAGE DataKinds #-}
+
 module Sustain
 where
-import Data.List as L
+import Data.List as L (map, foldr, filter, elem)
 import Data.Array as A
+import Data.Map as M (empty, insert, lookup, Map,singleton)
+import Data.Finite
+import Data.Set as S (fromDistinctAscList, Set, member, elems, findMin, findMax, fromList,map)
+
+type Note = Set (Finite 5)
+type Notes = Set Note
+type Pots    = Set Int 
 
 type Pattern = Array Int Char
-type Note = Pattern
+type Note' = Pattern
 
-pattern s = listArray (0,length s-1) s
+pattern :: String -> Pots
+pattern = fromDistinctAscList . L.map fst . (L.filter ((=='#').snd) . zip [0..])
 
-extendLeft l a = listArray (m-l,n) (replicate l '.' ++ elems a)
-    where (m,n) = bounds a
+note :: String -> Note
+note = fromDistinctAscList . L.map fst . (L.filter ((=='#').snd) . zip [0..])
 
-extendRight r a = listArray (m,n+r) (elems a ++ replicate r '.')
-    where (m,n) = bounds a
+notes :: [String] -> Notes
+notes = fromList . L.map note
 
-normalize a | a!m == '.' = normalize (listArray (succ m,n) (tail (elems a)))
-    where (m,n) = bounds a
-
-normalize a | a!n == '.' = normalize (listArray (m,pred n) (init (elems a)))
+matches :: Notes -> Pots -> Int -> Bool
+matches ns p i = ps `S.member` ns
     where
-    (m,n) = bounds a 
+    ps = S.fromDistinctAscList . (flip filter finites)$ \j -> (i - 2 + fromIntegral j) `S.member` p
+                 
+generation :: Notes -> Pots -> Pots
+generation ns p = fromDistinctAscList ((filter (\i -> matches ns p i) [findMin p - 2 .. findMax p + 2]))
 
-normalize a = a
+normalize :: Pots -> Pots
+normalize p = S.map (\n -> n - mn) p
+    where mn = findMin p
 
-sustain :: Pattern -> [Note] -> Pattern
-sustain initial notes = let
-    pots = extendRight 4 (extendLeft 4 initial)
-    (start, end) = bounds pots
-    resultBounds = (start+2,end-2)
-    match i note = and [pots!(i-2+j) == note!j | j <- range (bounds note)]
-    matches i = or (map (match i) notes)
-    result = map (represent . matches) (range resultBounds)
-    represent True = '#'
-    represent False = '.'
-    in normalize (listArray resultBounds result)
+type Start = Int
+type Incr = Int
+type Offset = Int
 
-times n f a = foldr ($) a (replicate n f)
+findRepetition :: Pots -> Notes -> Maybe (Start, Incr, Offset)
+findRepetition p ns = findRepetition' 1 p (M.singleton p (0,0))
+    where
+    findRepetition` i p seen = case p'Norm `M.lookup` seen of
+        Nothing -> findRepetition` (succ i) p' (M.insert p'Norm (i,mn) seen)
+        Just (

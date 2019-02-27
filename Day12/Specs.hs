@@ -1,9 +1,12 @@
 import Test.Hspec
 import Test.QuickCheck
 import Sustain
-import Data.Array
+import Data.Array as A
+import Data.Set as S
+import Data.List as L
+import Data.Finite
 
-ns = map pattern ["...##"
+ns = notes ["...##"
                  ,"..#.."
                  ,".#..."
                  ,".#.#."
@@ -27,27 +30,46 @@ ns = map pattern ["...##"
 --20: .#....##....#####...#######....#.#..##.
 --
 
-i = pattern "#..#.#..##......###...###" 
-initialPattern :: Gen Pattern
-initialPattern = fmap (pattern . ('#':) . (++"#")) $ listOf1 (elements "#.")
+p = pattern "#..#.#..##......###...###" 
 
 main = do 
-    quickCheck $ forAll initialPattern $ \p ->
-        let (start,end) = bounds p in p!start == '#' && p!end == '#'
-    quickCheck $ forAll initialPattern $ \p -> 
-        forAll (choose (1,4)) $ \l ->
-            forAll (choose (1,4)) $ \r ->
-                 let
-                    p' = extendRight r (extendLeft l p)
-                 in normalize p' == p
-    hspec $ do
-        describe "sustain" $ do
-            let pat a = (fst (bounds a),elems a)
-            it "tells which pots will contain a plant according to notes" $ do
-                let p = pattern "#..#.#..##......###...###"
-                pat (sustain p ns) `shouldBe` (0,"#...#....#.....#..#..#..#")
 
-            it "can be repeated" $ do
-                let r = times 20 (flip sustain ns) i 
-                pat r `shouldBe` (-2,"#....##....#####...#######....#.#..##")
+    hspec $ do
+        describe "pattern" $ do
+            it "collects the numbers of the pots containing a plant" $ do
+                0 `S.member` p `shouldBe` True
+                1 `S.member` p `shouldBe` False
+                findMin p `shouldBe` 0
+                findMax p `shouldBe` 24
+
+        describe "note" $ do
+            it "collects the numbers of the pots forming a sustainable context" $ do
+                let n = note ".#.##"
+                S.elems n `shouldBe` [finite 1,finite 3,finite 4]
+
+        describe "matches" $ do
+            it "tells if one of the notes match a set of pots at a given position" $ do
+                matches ns p 0 `shouldBe` True
+                matches ns p 1 `shouldBe` False
+                matches ns p 4 `shouldBe` True
+
+        describe "generation" $ do
+            it "contains all the positions at which pots match a note" $ do
+                let g = generation ns p
+                    rep s = L.map (rep' s) [(findMin s)..(findMax s)]
+                    rep' s i | i `member` s = '#'
+                             | otherwise      = '.'
+                S.elems g `shouldBe` [0,4,9,15,18,21,24]
+                rep g  `shouldBe` "#...#....#.....#..#..#..#"
+
+        describe "normalize" $ do
+            it "changes the numbers of a set so that they begin with 0" $ do
+                let s = fromDistinctAscList [-3,6,17]
+                normalize s `shouldBe` fromDistinctAscList [0,9,20]
+                let s = fromDistinctAscList [3,6,17]
+                normalize s `shouldBe` fromDistinctAscList [0,3,14]
         
+        describe "findRepetition" $ do
+            it "finds after how many generations and with what stating position a pattern is repeated" $ do
+                findRepetition p ns `shouldBe` Nothing  
+
